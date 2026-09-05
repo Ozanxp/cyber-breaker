@@ -430,42 +430,54 @@
 
   <script>
     // ==========================================
-    // ÖNBELLEK TEMİZLİĞİ VE SÜRÜM KONTROLÜ
-    // ==========================================
-    localStorage.removeItem("bb_all_unlocked_v4");
-    localStorage.removeItem("bb_ad_free_v4");
-
-    // ==========================================
     // ADSGRAM REKLAM YAPILANDIRMASI
     // ==========================================
     const ADSGRAM_BLOCK_ID = "46174";
 
     function showRewardedAd(onSuccess) {
       if (typeof window.Adsgram !== "undefined") {
-        const adController = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID, debug: false });
+        // Bloğun durumunu aktif edene kadar test modunu destekler
+        const adController = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
         adController.show()
           .then((result) => {
             triggerHaptic("notification");
             if (onSuccess) onSuccess();
           })
           .catch((err) => {
-            console.error("Adsgram hatası:", err);
-            const errDescription = err?.description || err?.message || JSON.stringify(err);
-            alert((currentLang === "tr" ? "Reklam yüklenemedi: " : "Ad failed: ") + errDescription);
+            console.error("Adsgram Hatası:", err);
+            // Adsgram'dan gelen uyarıyı kullanıcıya net bildirir
+            alert("Adsgram Durumu:\n" + (err?.description || "Reklam yüklenemedi. Lütfen panelden bloğu 'Active' durumuna getirin."));
           });
       } else {
-        alert(currentLang === "tr" ? "Adsgram SDK henüz yüklenemedi. İnternet bağlantınızı kontrol edin." : "Adsgram SDK not loaded.");
+        alert("Adsgram kütüphanesi yüklenemedi. İnternet bağlantınızı kontrol edin.");
       }
     }
 
     // ==========================================
-    // TELEGRAM STARS (XTR) ENTEGRASYON YAPISI
+    // TELEGRAM STARS (XTR) GÜVENLİ ÖDEME MOTORU
     // ==========================================
-    function triggerStarsPayment(itemType, amountStars, onSuccess) {
+    function processStarsPayment(itemName, starsCost, onSuccess) {
       const tg = window.Telegram?.WebApp;
-      alert(currentLang === "tr"
-        ? `⭐ Telegram Stars Satın Alma (${amountStars} Stars):\n\nBu işlem için botunuzun 'createInvoiceLink' API metodundan fatura linki oluşturulmalıdır. Fatura linki hazır olduğunda Telegram onay penceresi doğrudan açılacaktır.`
-        : `⭐ Telegram Stars Purchase (${amountStars} Stars):\n\nRequires backend invoice link via 'createInvoiceLink'.`);
+      
+      // Hileyi engelleyen kontrol: Gerçek fatura linki yoksa bedava ödül verme!
+      // Telegram Stars akışında fatura backend tarafından 'createInvoiceLink' ile üretilir.
+      alert(
+        `⭐ TELEGRAM STARS ÖDEMESİ\n\n` +
+        `Ürün: ${itemName}\n` +
+        `Tutar: ${starsCost} Stars (⭐)\n\n` +
+        `Ödeme sistemi henüz canlı Bot API faturasına bağlı değildir. Bot token güvenliği nedeniyle bedava top verilmesi engellenmiştir.`
+      );
+
+      // İleride backend fatura linkini entegre ettiğinizde çalışacak resmi satır:
+      /*
+      if (tg && tg.openInvoice) {
+        tg.openInvoice("https://t.me/$...", (status) => {
+          if (status === "paid" && onSuccess) {
+            onSuccess();
+          }
+        });
+      }
+      */
     }
 
     // ==========================================
@@ -679,7 +691,7 @@
       { fill: "#b026ff", glow: "#b026ff" }
     ];
 
-    let unlockedLevel = parseInt(localStorage.getItem("bb_unlocked_lvl_v6") || "1", 10);
+    let unlockedLevel = parseInt(localStorage.getItem("bb_unlocked_lvl_v7") || "1", 10);
     if (isNaN(unlockedLevel) || unlockedLevel < 1) unlockedLevel = 1;
 
     let currentLevel = 1;
@@ -943,7 +955,7 @@
       if (victoryTimer >= TRANSITION_DURATION) {
         if (currentLevel >= unlockedLevel) {
           unlockedLevel = currentLevel + 1;
-          localStorage.setItem("bb_unlocked_lvl_v6", unlockedLevel.toString());
+          localStorage.setItem("bb_unlocked_lvl_v7", unlockedLevel.toString());
         }
         document.getElementById("modal-clear").style.display = "flex";
       }
@@ -1467,7 +1479,7 @@
     document.getElementById("btn-new-game").onclick = () => {
       if (confirm(t("new_game_prompt"))) {
         unlockedLevel = 1;
-        localStorage.setItem("bb_unlocked_lvl_v6", "1");
+        localStorage.setItem("bb_unlocked_lvl_v7", "1");
         triggerHaptic("heavy");
         openHomeScreen();
       }
@@ -1531,8 +1543,9 @@
 
     document.getElementById("btn-next-level").onclick = () => startStage(currentLevel + 1);
 
+    // Stars Satın Alma (Güvenli Kontrol)
     document.getElementById("btn-buy-stars").onclick = () => {
-      triggerStarsPayment("extra_balls", 10, () => {
+      processStarsPayment("+5 Ekstra Top", 10, () => {
         ballCount += 5;
         ballsDisplay.innerText = `${t("ball_prefix")}: ${ballCount}`;
         beams.push(new BeamEffect(baseBallX, FLOOR_Y));
@@ -1541,17 +1554,17 @@
     };
 
     document.getElementById("btn-unlock-all").onclick = () => {
-      triggerStarsPayment("unlock_all", 75, () => {
+      processStarsPayment("Tüm Kilitleri Aç", 75, () => {
         unlockedLevel = 100;
-        localStorage.setItem("bb_unlocked_lvl_v6", "100");
+        localStorage.setItem("bb_unlocked_lvl_v7", "100");
         buildLevelGrid();
       });
     };
 
     document.getElementById("btn-skip-level").onclick = () => {
-      triggerStarsPayment("skip_level", 15, () => {
+      processStarsPayment("Bölümü Geç", 15, () => {
         unlockedLevel = Math.max(unlockedLevel, currentLevel + 1);
-        localStorage.setItem("bb_unlocked_lvl_v6", unlockedLevel.toString());
+        localStorage.setItem("bb_unlocked_lvl_v7", unlockedLevel.toString());
         startStage(currentLevel + 1);
       });
     };
