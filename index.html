@@ -133,7 +133,7 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        const ADSGRAM_BLOCK_ID = "43573"; // Onaylı blok ID
+        const ADSGRAM_BLOCK_ID = "46174"; // Adsgram panelinden aldığın onaylı gerçek blok ID
         let adController = null;
 
         if (window.Adsgram) {
@@ -142,16 +142,18 @@
 
         function watchAdForExtraBalls() {
             if (!adController) {
+                alert("Adsgram SDK yüklenemedi. Test modu simüle ediliyor.");
                 grantExtraBallsReward();
                 return;
             }
 
             adController.show()
                 .then((result) => {
+                    // Kullanıcı reklamı başarıyla izlediğinde ödülü ver
                     grantExtraBallsReward();
                 })
                 .catch((err) => {
-                    console.warn("Reklam izlenmedi:", err);
+                    console.warn("Reklam izlenmedi veya kapatıldı:", err);
                 });
         }
 
