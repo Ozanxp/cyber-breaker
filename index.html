@@ -1,350 +1,1748 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Swipe Brick Breaker: Cyber Edition</title>
-    <!-- Telegram Web App SDK -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Adsgram SDK -->
-    <script src="https://sad.adsgram.ai/js/sad.js"></script>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        body, html {
-            width: 100%;
-            height: 100vh;
-            background-color: #0d0f18;
-            color: #00ffff;
-            font-family: 'Courier New', Courier, monospace;
-            overflow: hidden;
-            position: fixed;
-        }
-        #game-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #121526;
-            display: flex;
-            flex-direction: column;
-        }
-        #hud {
-            width: 100%;
-            height: 45px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 15px;
-            background: #161a2e;
-            border-bottom: 1px solid #222b45;
-            font-size: 14px;
-            font-weight: bold;
-            flex-shrink: 0;
-        }
-        canvas {
-            display: block;
-            background: #090b10;
-            width: 100%;
-            flex-grow: 1;
-        }
-        .ui-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(13, 15, 24, 0.95);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-            text-align: center;
-            padding: 20px;
-        }
-        h1 {
-            font-size: 26px;
-            margin-bottom: 10px;
-            color: #00ffff;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-        }
-        p {
-            font-size: 13px;
-            margin-bottom: 20px;
-            color: #a0aabf;
-        }
-        .btn {
-            background: linear-gradient(135deg, #00ffff, #0088ff);
-            color: #0d0f18;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
-            margin: 10px;
-        }
-        .btn-ad {
-            background: linear-gradient(135deg, #ff00ff, #8800ff);
-            color: #ffffff;
-            box-shadow: 0 0 15px rgba(255, 0, 255, 0.4);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Swipe Brick Breaker: Cyber Edition</title>
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Adsgram SDK -->
+  <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    body {
+      background-color: #040508;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+      color: #fff;
+    }
+    /* Mobilde tam ortalama ve dinamik ölçekleme sağlayan ana kapsayıcı */
+    #game-container {
+      position: relative;
+      width: 360px;
+      height: 640px;
+      border: 2px solid #131a26;
+      border-radius: 16px;
+      box-shadow: 0 0 45px rgba(0, 240, 255, 0.25);
+      background-color: #06080e;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transform-origin: center center;
+      flex-shrink: 0;
+    }
+    canvas {
+      background-color: #06080e;
+      display: block;
+    }
+
+    /* Üst Bilgi Barı */
+    #ui-top-bar {
+      height: 44px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 10px;
+      background: rgba(12, 17, 26, 0.88);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+      font-size: 12px;
+      font-weight: 800;
+      color: #00f0ff;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+      z-index: 5;
+    }
+    .badge {
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+    }
+    .top-btn {
+      background: rgba(0, 240, 255, 0.12);
+      border: 1px solid #00f0ff;
+      color: #00f0ff;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 800;
+      transition: 0.15s;
+    }
+    .top-btn:active { transform: scale(0.95); }
+
+    /* Alt Bar */
+    #ui-bottom-bar {
+      height: 52px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background: rgba(12, 17, 26, 0.92);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(0, 240, 255, 0.15);
+      padding: 4px 6px;
+      z-index: 5;
+    }
+    .action-btn {
+      flex: 1;
+      margin: 0 3px;
+      height: 40px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: 0.15s;
+    }
+    .action-btn:active { transform: scale(0.95); }
+    #btn-watch-ad {
+      background: linear-gradient(135deg, #00b09b, #96c93d);
+      color: #05140e;
+      box-shadow: 0 0 12px rgba(150, 201, 61, 0.3);
+    }
+    #btn-buy-stars {
+      background: linear-gradient(135deg, #f7971e, #ffd200);
+      color: #1a1202;
+      box-shadow: 0 0 12px rgba(255, 210, 0, 0.3);
+    }
+    #btn-unlock-all {
+      background: linear-gradient(135deg, #b026ff, #ff007f);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(255, 0, 127, 0.35);
+    }
+
+    /* Menü Pencereleri */
+    .screen-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(6, 8, 14, 0.97);
+      backdrop-filter: blur(8px);
+      z-index: 25;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-8px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .screen-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+    .screen-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .screen-title {
+      font-size: 20px;
+      font-weight: 900;
+      color: #00f0ff;
+      text-shadow: 0 0 14px rgba(0, 240, 255, 0.7);
+    }
+
+    #home-screen {
+      justify-content: center;
+      align-items: center;
+      gap: 18px;
+    }
+    .main-logo-title {
+      font-size: 26px;
+      font-weight: 900;
+      color: #00f0ff;
+      text-shadow: 0 0 20px rgba(0, 240, 255, 0.8);
+      text-align: center;
+      line-height: 1.2;
+      margin-bottom: 25px;
+    }
+    .main-logo-sub {
+      font-size: 13px;
+      color: #ffd700;
+      letter-spacing: 2px;
+      display: block;
+      margin-top: 6px;
+    }
+    .menu-button {
+      width: 230px;
+      padding: 14px 0;
+      font-size: 14px;
+      font-weight: 900;
+      border-radius: 12px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: 0.15s;
+    }
+    .menu-button:active { transform: scale(0.96); }
+    .btn-play-action {
+      background: linear-gradient(135deg, #00f0ff, #0077ff);
+      color: #05070b;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+    }
+    .btn-secondary-action {
+      background: rgba(18, 25, 38, 0.9);
+      border-color: rgba(0, 240, 255, 0.3);
+      color: #fff;
+    }
+
+    .setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(18, 25, 38, 0.8);
+      border: 1px solid rgba(0, 240, 255, 0.15);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .toggle-btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 12px;
+      cursor: pointer;
+      border: 1px solid #00f0ff;
+      background: rgba(0, 240, 255, 0.15);
+      color: #00f0ff;
+    }
+    .toggle-btn.off {
+      border-color: #555;
+      background: rgba(255, 255, 255, 0.05);
+      color: #777;
+    }
+
+    .tab-container {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+      background: #0f141f;
+      border-radius: 10px;
+      padding: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tab-container::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      flex: 0 0 auto;
+      background: none;
+      border: none;
+      color: #6a778b;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 7px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: #00f0ff;
+      color: #040508;
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+    }
+    .level-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      flex: 1;
+      overflow-y: auto;
+      padding-bottom: 10px;
+    }
+    .level-card {
+      aspect-ratio: 1;
+      background: rgba(18, 25, 38, 0.9);
+      border: 1px solid rgba(0, 240, 255, 0.15);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: 800;
+      color: #fff;
+      font-size: 14px;
+      transition: 0.15s;
+    }
+    .level-card.locked {
+      background: rgba(11, 14, 20, 0.7);
+      border-color: #171c26;
+      color: #373e4b;
+      cursor: not-allowed;
+    }
+    .level-card:not(.locked):hover {
+      border-color: #00f0ff;
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.5);
+    }
+
+    .modal {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(4, 5, 8, 0.95);
+      z-index: 30;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+    .modal-btn {
+      margin-top: 12px;
+      width: 230px;
+      padding: 12px 0;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      border: none;
+      transition: 0.15s;
+    }
+    .modal-btn:active { transform: scale(0.96); }
+    .btn-primary {
+      background: #00f0ff;
+      color: #040508;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.6);
+    }
+    .btn-skip {
+      background: linear-gradient(135deg, #f7971e, #ffd200);
+      color: #1a1202;
+      box-shadow: 0 0 14px rgba(255, 210, 0, 0.4);
+    }
+  </style>
 </head>
 <body>
 
-    <div id="game-container">
-        <!-- Üst Bilgi Paneli -->
-        <div id="hud">
-            <div>TUR: <span id="round-text">1</span></div>
-            <div>TOP: <span id="balls-text">1</span></div>
-            <div>SKOR: <span id="score-text">0</span></div>
-        </div>
-
-        <!-- Oyun Alanı -->
-        <canvas id="gameCanvas"></canvas>
-
-        <!-- Başlangıç Ekranı -->
-        <div id="start-screen" class="ui-overlay">
-            <h1>CYBER BREAKER</h1>
-            <p>Topları fırlat, tuğlaları kır, tur geç!</p>
-            <button class="btn" onclick="startGame()">OYUNA BAŞLA</button>
-        </div>
-
-        <!-- Oyun Bitti Ekranı -->
-        <div id="game-over-screen" class="ui-overlay" style="display: none;">
-            <h1>OYUN BİTTİ</h1>
-            <p>Skorun: <span id="final-score">0</span></p>
-            <button class="btn" onclick="startGame()">TEKRAR DENE</button>
-            <button class="btn btn-ad" onclick="watchAdForExtraBalls()">🎬 REKLAM İZLE (+5 TOP)</button>
-        </div>
+  <div id="game-container">
+    <div id="ui-top-bar">
+      <button id="btn-top-menu" class="top-btn">🏠 Menü</button>
+      <div id="level-display">BÖLÜM 1</div>
+      <div class="badge" id="balls-display" style="color:#ffd700;">TOP: 10</div>
     </div>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+    <canvas id="gameCanvas" width="360" height="544"></canvas>
 
-        const ADSGRAM_BLOCK_ID = "46174"; // Adsgram Onaylı Blok ID
-        let adController = null;
+    <div id="ui-bottom-bar">
+      <button id="btn-watch-ad" class="action-btn">
+        <span>🎬</span> <span id="label-ad">+2 Top</span>
+      </button>
+      <button id="btn-buy-stars" class="action-btn">
+        <span>⭐</span> <span id="label-stars">+5 Top</span>
+      </button>
+      <button id="btn-unlock-all" class="action-btn">
+        <span>👑</span> <span id="label-unlock">Kilitleri Aç (75⭐)</span>
+      </button>
+    </div>
 
-        if (window.Adsgram) {
-            adController = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
+    <!-- 1. Ana Menü -->
+    <div id="home-screen" class="screen-overlay">
+      <div class="main-logo-title">
+        SWIPE BRICK<br>BREAKER
+        <span class="main-logo-sub">CYBER EDITION</span>
+      </div>
+      <button id="btn-home-play" class="menu-button btn-play-action">
+        <span>🎮</span> <span id="lbl-home-play">OYNA</span>
+      </button>
+      <button id="btn-home-levels" class="menu-button btn-secondary-action">
+        <span>📑</span> <span id="lbl-home-levels">BÖLÜMLER</span>
+      </button>
+      <button id="btn-home-settings" class="menu-button btn-secondary-action">
+        <span>⚙️</span> <span id="lbl-home-settings">AYARLAR</span>
+      </button>
+    </div>
+
+    <!-- 2. Bölümler -->
+    <div id="levels-screen" class="screen-overlay">
+      <div class="screen-header">
+        <div class="screen-title" id="lbl-levels-title">BÖLÜM SEÇİMİ</div>
+        <button id="btn-levels-back" class="top-btn">Geri</button>
+      </div>
+      <div class="tab-container" id="tabContainer"></div>
+      <div class="level-grid" id="levelGrid"></div>
+    </div>
+
+    <!-- 3. Ayarlar -->
+    <div id="settings-screen" class="screen-overlay">
+      <div class="screen-header">
+        <div class="screen-title" id="lbl-settings-title">AYARLAR</div>
+        <button id="btn-settings-back" class="top-btn">Geri</button>
+      </div>
+      <div class="setting-item">
+        <span id="lbl-setting-sound">Ses Efektleri</span>
+        <button id="btn-toggle-sound" class="toggle-btn">AÇIK</button>
+      </div>
+      <div class="setting-item">
+        <span id="lbl-setting-haptic">Titreşim (Haptik)</span>
+        <button id="btn-toggle-haptic" class="toggle-btn">AÇIK</button>
+      </div>
+      <div class="setting-item">
+        <span id="lbl-setting-lang">Oyun Dili</span>
+        <button id="btn-toggle-lang" class="toggle-btn">TÜRKÇE</button>
+      </div>
+      <div style="margin-top:auto; text-align:center;">
+        <button id="btn-new-game" class="top-btn" style="border-color:#ff0055; color:#ff0055; padding:8px 16px;">
+          🔄 Oyunu Sıfırla (New Game)
+        </button>
+      </div>
+    </div>
+
+    <!-- Zafer Modalı -->
+    <div id="modal-clear" class="modal">
+      <h2 style="color: #39ff14; text-shadow: 0 0 18px #39ff14; font-size: 24px; font-weight:900;" id="clear-modal-title">BÖLÜM GEÇİLDİ!</h2>
+      <p style="color: #8fa0b5; font-size: 13px; margin: 8px 0 14px;" id="clear-modal-desc">Tüm bloklar temizlendi.</p>
+      <button id="btn-next-level" class="modal-btn btn-primary">Sonraki Bölüm</button>
+    </div>
+
+    <!-- Yenilgi Modalı -->
+    <div id="modal-gameover" class="modal">
+      <h2 style="color: #ff0055; text-shadow: 0 0 18px #ff0055; font-size: 24px; font-weight:900;" id="gameover-modal-title">SAVUNMA ÇÖKTÜ</h2>
+      <p style="color: #8fa0b5; font-size: 13px; margin: 6px 0 12px;" id="gameover-desc">Tuğlalar tabana ulaştı.</p>
+      <button id="btn-retry-level" class="modal-btn btn-primary">Tekrar Dene (Reklam)</button>
+      <button id="btn-skip-level" class="modal-btn btn-skip">⭐ Bölümü Geç (15 Stars)</button>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // ADSGRAM REKLAM YAPILANDIRMASI
+    // ==========================================
+    // Panelinden aldığın onaylı Block ID bağlandı
+    const ADSGRAM_BLOCK_ID = "46174";
+
+    function showRewardedAd(onSuccess) {
+      if (isAdFree) {
+        if (onSuccess) onSuccess();
+        return;
+      }
+
+      if (window.Adsgram && ADSGRAM_BLOCK_ID !== "YOUR_BLOCK_ID_HERE") {
+        window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID })
+          .show()
+          .then((result) => {
+            triggerHaptic("notification");
+            if (onSuccess) onSuccess();
+          })
+          .catch((err) => {
+            console.warn("Reklam gösterilemedi:", err);
+            alert(currentLang === "tr" ? "Reklam yüklenemedi, lütfen tekrar deneyin." : "Ad failed to load.");
+          });
+      } else {
+        alert(currentLang === "tr" ? "🎬 Reklam oynatılıyor (Test Modu)..." : "🎬 Playing ad (Test Mode)...");
+        setTimeout(() => {
+          triggerHaptic("notification");
+          if (onSuccess) onSuccess();
+        }, 600);
+      }
+    }
+
+    // ==========================================
+    // EKRANI DİNAMİK ÖLÇEKLENDİRME (MOBİL FIX)
+    // ==========================================
+    function autoScale() {
+      const container = document.getElementById("game-container");
+      if (!container) return;
+      const scaleX = window.innerWidth / 360;
+      const scaleY = window.innerHeight / 640;
+      const scale = Math.min(scaleX, scaleY);
+      container.style.transform = `scale(${scale})`;
+    }
+    window.addEventListener("resize", autoScale);
+    window.addEventListener("orientationchange", () => setTimeout(autoScale, 200));
+
+    // ==========================================
+    // Çeviri Sözlüğü (TR / EN)
+    // ==========================================
+    const TRANSLATIONS = {
+      tr: {
+        home_play: "OYNA",
+        home_levels: "BÖLÜMLER",
+        home_settings: "AYARLAR",
+        top_menu: "🏠 Menü",
+        levels_title: "BÖLÜM SEÇİMİ",
+        settings_title: "AYARLAR",
+        setting_sound: "Ses Efektleri",
+        setting_haptic: "Titreşim (Haptik)",
+        setting_lang: "Oyun Dili",
+        lang_name: "TÜRKÇE",
+        btn_on: "AÇIK",
+        btn_off: "KAPALI",
+        btn_back: "Geri",
+        level_prefix: "BÖLÜM",
+        ball_prefix: "TOP",
+        ad_btn: "+2 Top",
+        stars_btn: "+5 Top",
+        unlock_btn: "Kilitleri Aç (75⭐)",
+        clear_title: "BÖLÜM GEÇİLDİ!",
+        clear_desc: "Tüm bloklar temizlendi.",
+        clear_vip_desc: "👑 VIP Üye: Reklamsız doğrudan geçiş aktif!",
+        next_btn: "Sonraki Bölüm",
+        next_vip_btn: "Sonraki Bölüm (Doğrudan Geç)",
+        gameover_title: "SAVUNMA ÇÖKTÜ",
+        gameover_desc: "Tuğlalar tabana ulaştı.",
+        retry_ad_btn: "Tekrar Dene (Reklam)",
+        retry_vip_btn: "Tekrar Dene (Doğrudan Başla)",
+        skip_btn: "⭐ Bölümü Geç (15 Stars)",
+        beam_text: "+1 TOP!",
+        new_game_prompt: "Oyunu sıfırlayıp 1. bölüme dönmek istediğine emin misin?",
+        intro_sub: "Sistem Başlatılıyor..."
+      },
+      en: {
+        home_play: "PLAY",
+        home_levels: "STAGES",
+        home_settings: "SETTINGS",
+        top_menu: "🏠 Menu",
+        levels_title: "STAGE SELECT",
+        settings_title: "SETTINGS",
+        setting_sound: "Sound Effects",
+        setting_haptic: "Haptic Feedback",
+        setting_lang: "Language",
+        lang_name: "ENGLISH",
+        btn_on: "ON",
+        btn_off: "OFF",
+        btn_back: "Back",
+        level_prefix: "LEVEL",
+        ball_prefix: "BALLS",
+        ad_btn: "+2 Balls",
+        stars_btn: "+5 Balls",
+        unlock_btn: "Unlock All (75⭐)",
+        clear_title: "STAGE CLEAR!",
+        clear_desc: "All bricks destroyed.",
+        clear_vip_desc: "👑 VIP Member: Instant pass active!",
+        next_btn: "Next Stage",
+        next_vip_btn: "Next Stage (Instant)",
+        gameover_title: "SYSTEM FAILURE",
+        gameover_desc: "Bricks reached bottom line.",
+        retry_ad_btn: "Retry (Watch Ad)",
+        retry_vip_btn: "Retry (Instant)",
+        skip_btn: "⭐ Skip Stage (15 Stars)",
+        beam_text: "+1 BALL!",
+        new_game_prompt: "Are you sure you want to reset all progress to Level 1?",
+        intro_sub: "System Initializing..."
+      }
+    };
+
+    let currentLang = localStorage.getItem("bb_lang") || "tr";
+    let soundEnabled = localStorage.getItem("bb_sound") !== "false";
+    let hapticEnabled = localStorage.getItem("bb_haptic") !== "false";
+
+    function t(key) {
+      return TRANSLATIONS[currentLang][key] || key;
+    }
+
+    // ==========================================
+    // Web Audio API Ses Motoru
+    // ==========================================
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new AudioCtx();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+    }
+
+    function playTone(freq, type = "sine", duration = 0.08, vol = 0.25, timeOffset = 0) {
+      if (!soundEnabled) return;
+      try {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const startTime = audioCtx.currentTime + timeOffset;
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, startTime);
+        gain.gain.setValueAtTime(vol, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      } catch (e) {}
+    }
+
+    const SoundEffects = {
+      hit: () => playTone(520 + Math.random() * 120, "triangle", 0.04, 0.15),
+      break: () => playTone(840, "sine", 0.09, 0.25),
+      bomb: () => {
+        if (!soundEnabled) return;
+        try {
+          initAudio();
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(140, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(25, audioCtx.currentTime + 0.35);
+          gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.35);
+        } catch (e) {}
+      },
+      powerup: () => {
+        playTone(660, "sine", 0.06, 0.2);
+        playTone(880, "sine", 0.1, 0.25, 0.05);
+      },
+      introMusic: () => {
+        playTone(220, "sawtooth", 0.3, 0.2, 0.0);
+        playTone(330, "sine", 0.3, 0.25, 0.3);
+        playTone(440, "sine", 0.4, 0.3, 0.6);
+        playTone(660, "sine", 0.5, 0.35, 1.2);
+        playTone(880, "sine", 0.8, 0.35, 1.8);
+      },
+      winJingle: () => {
+        playTone(440, "sine", 0.15, 0.25, 0.0);
+        playTone(554.37, "sine", 0.15, 0.25, 0.15);
+        playTone(659.25, "sine", 0.2, 0.3, 0.3);
+        playTone(880, "triangle", 0.5, 0.35, 0.5);
+      },
+      loseJingle: () => {
+        playTone(392, "sawtooth", 0.25, 0.3, 0.0);
+        playTone(349.23, "sawtooth", 0.25, 0.3, 0.25);
+        playTone(311.13, "sawtooth", 0.3, 0.3, 0.5);
+        playTone(196, "sawtooth", 0.6, 0.35, 0.8);
+      }
+    };
+
+    // ==========================================
+    // Telegram ve Haptik Titreşim
+    // ==========================================
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+
+    function triggerHaptic(type = "light") {
+      if (!hapticEnabled) return;
+      if (tg?.HapticFeedback) {
+        if (type === "heavy") tg.HapticFeedback.impactOccurred("heavy");
+        else if (type === "notification") tg.HapticFeedback.notificationOccurred("success");
+        else tg.HapticFeedback.impactOccurred("light");
+      } else if (navigator.vibrate) {
+        if (type === "heavy") navigator.vibrate(40);
+        else if (type === "notification") navigator.vibrate([20, 40, 20]);
+        else navigator.vibrate(12);
+      }
+    }
+
+    // ==========================================
+    // Oyun Sabitleri
+    // ==========================================
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const levelDisplay = document.getElementById("level-display");
+    const ballsDisplay = document.getElementById("balls-display");
+
+    const COLS = 7;
+    const BLOCK_WIDTH = canvas.width / COLS;
+    const BLOCK_HEIGHT = 34;
+    const BALL_RADIUS = 5;
+    const BASE_BALL_SPEED = 10.2;
+    const LAUNCH_INTERVAL = 3;
+    const FLOOR_Y = canvas.height - 25;
+
+    const MIN_LAUNCH_ANGLE = -0.10;
+    const MAX_LAUNCH_ANGLE = -Math.PI + 0.10;
+
+    const NEON_PALETTE = [
+      { fill: "#ff0055", glow: "#ff0055" },
+      { fill: "#00f0ff", glow: "#00f0ff" },
+      { fill: "#39ff14", glow: "#39ff14" },
+      { fill: "#ffd700", glow: "#ffd700" },
+      { fill: "#b026ff", glow: "#b026ff" }
+    ];
+
+    let isAllUnlocked = localStorage.getItem("bb_all_unlocked_v4") === "true";
+    let isAdFree = localStorage.getItem("bb_ad_free_v4") === "true";
+    let unlockedLevel = parseInt(localStorage.getItem("bb_unlocked_lvl_v4") || "1", 10);
+    if (isNaN(unlockedLevel) || unlockedLevel < 1) unlockedLevel = 1;
+
+    let currentLevel = 1;
+    let ballCount = 10;
+    let extraBallsCollected = 0;
+    let baseBallX = canvas.width / 2;
+    let baseBallY = FLOOR_Y - BALL_RADIUS;
+    let nextBaseBallX = baseBallX;
+
+    let isAiming = false;
+    let isShooting = false;
+    let aimStartPos = { x: 0, y: 0 };
+    let aimCurrentPos = { x: 0, y: 0 };
+    let launchAngle = -Math.PI / 2;
+    let launchTimer = 0;
+    let ballsToLaunch = 0;
+
+    let gameState = "INTRO";
+    let currentBaseHp = 7;
+    let remainingRows = 0;
+    let screenShake = 0;
+
+    // Zamanlayıcılar: Açılış 4sn (240 kare), Geçişler 3sn (180 kare)
+    const INTRO_DURATION = 240;
+    const TRANSITION_DURATION = 180;
+    let introTimer = 0;
+    let victoryTimer = 0;
+    let gameOverTimer = 0;
+
+    let balls = [];
+    let blocks = [];
+    let bonusItems = [];
+    let bombs = [];
+    let shockwaves = [];
+    let particles = [];
+    let beams = [];
+    let introBlocks = [];
+
+    // ==========================================
+    // Efektler
+    // ==========================================
+    class BeamEffect {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.width = 16;
+        this.alpha = 1;
+      }
+      update() {
+        this.width += 1.8;
+        this.alpha -= 0.04;
+      }
+      draw() {
+        if (this.alpha <= 0) return;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, this.alpha);
+        const grad = ctx.createLinearGradient(this.x - this.width / 2, 0, this.x + this.width / 2, 0);
+        grad.addColorStop(0, "rgba(57, 255, 20, 0)");
+        grad.addColorStop(0.5, "#ffffff");
+        grad.addColorStop(1, "rgba(57, 255, 20, 0)");
+        ctx.fillStyle = grad;
+        ctx.shadowColor = "#39ff14";
+        ctx.shadowBlur = 16;
+        ctx.fillRect(this.x - this.width / 2, 0, this.width, canvas.height);
+        ctx.restore();
+      }
+    }
+
+    class Particle {
+      constructor(x, y, dx, dy, color, size, decay, shape = "circle") {
+        this.x = x;
+        this.y = y;
+        this.dx = dx;
+        this.dy = dy;
+        this.color = color;
+        this.size = size;
+        this.alpha = 1;
+        this.decay = decay;
+        this.shape = shape;
+        this.gravity = 0.08;
+      }
+      update() {
+        this.x += this.dx;
+        this.y += this.dy;
+        this.dy += this.gravity;
+        this.alpha -= this.decay;
+      }
+      draw() {
+        if (this.alpha <= 0) return;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, this.alpha);
+        ctx.fillStyle = this.color.fill;
+        ctx.shadowColor = this.color.glow;
+        ctx.shadowBlur = 8;
+        if (this.shape === "square") {
+          ctx.fillRect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
+        } else {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+    }
+
+    class Shockwave {
+      constructor(x, y, maxRadius, color) {
+        this.x = x;
+        this.y = y;
+        this.currentRadius = 6;
+        this.maxRadius = maxRadius;
+        this.color = color;
+        this.alpha = 1;
+      }
+      update() {
+        this.currentRadius += 5;
+        this.alpha -= 0.04;
+      }
+      draw() {
+        if (this.alpha <= 0) return;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.currentRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = this.color;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 16;
+        ctx.globalAlpha = Math.max(0, this.alpha);
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // ==========================================
+    // İntro Sahnesi
+    // ==========================================
+    function setupIntroScene() {
+      gameState = "INTRO";
+      introTimer = 0;
+      particles = [];
+      shockwaves = [];
+      introBlocks = [];
+
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 5; c++) {
+          introBlocks.push({
+            x: 55 + c * 52,
+            y: 150 + r * 36,
+            w: 46,
+            h: 30,
+            color: NEON_PALETTE[(r + c) % NEON_PALETTE.length],
+            destroyed: false,
+            alpha: 0
+          });
+        }
+      }
+    }
+
+    function runIntroLogic() {
+      introTimer++;
+
+      if (introTimer === 1) {
+        SoundEffects.introMusic();
+      }
+
+      introBlocks.forEach((b, idx) => {
+        if (introTimer > idx * 3 && b.alpha < 1) {
+          b.alpha += 0.08;
+        }
+      });
+
+      if (introTimer === 75) {
+        screenShake = 18;
+        triggerHaptic("heavy");
+        introBlocks.forEach(b => {
+          b.destroyed = true;
+          for (let i = 0; i < 4; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const spd = 2 + Math.random() * 5;
+            particles.push(new Particle(
+              b.x + b.w / 2, b.y + b.h / 2,
+              Math.cos(angle) * spd, Math.sin(angle) * spd - 2,
+              b.color, Math.random() * 6 + 3, 0.015, "square"
+            ));
+          }
+        });
+        shockwaves.push(new Shockwave(canvas.width / 2, 210, 180, "#00f0ff"));
+      }
+
+      introBlocks.forEach(b => {
+        if (!b.destroyed && b.alpha > 0) {
+          ctx.save();
+          ctx.globalAlpha = b.alpha;
+          ctx.strokeStyle = b.color.fill;
+          ctx.shadowColor = b.color.glow;
+          ctx.shadowBlur = 10;
+          ctx.lineWidth = 2;
+          ctx.strokeRect(b.x, b.y, b.w, b.h);
+          ctx.fillStyle = "rgba(12, 16, 24, 0.9)";
+          ctx.fillRect(b.x, b.y, b.w, b.h);
+          ctx.restore();
+        }
+      });
+
+      if (introTimer >= 90) {
+        const logoAlpha = Math.min(1, (introTimer - 90) / 30);
+        const pulse = Math.sin(introTimer * 0.08) * 4;
+
+        ctx.save();
+        ctx.globalAlpha = logoAlpha;
+        ctx.textAlign = "center";
+        ctx.font = "900 24px 'Segoe UI', Arial";
+        ctx.fillStyle = "#00f0ff";
+        ctx.shadowColor = "#00f0ff";
+        ctx.shadowBlur = 16 + pulse;
+        ctx.fillText("SWIPE BRICK BREAKER", canvas.width / 2, 205);
+
+        ctx.font = "bold 13px 'Segoe UI', Arial";
+        ctx.fillStyle = "#ffd700";
+        ctx.shadowColor = "#ffd700";
+        ctx.shadowBlur = 10;
+        ctx.fillText("CYBER EDITION", canvas.width / 2, 235);
+
+        ctx.font = "11px 'Segoe UI', Arial";
+        ctx.fillStyle = "rgba(255,255,255,0.6)";
+        ctx.shadowBlur = 0;
+        ctx.fillText(t("intro_sub"), canvas.width / 2, 275);
+        ctx.restore();
+      }
+
+      if (introTimer >= INTRO_DURATION) {
+        openHomeScreen();
+      }
+    }
+
+    function startVictoryCinematic() {
+      gameState = "VICTORY_CINEMATIC";
+      victoryTimer = 0;
+      SoundEffects.winJingle();
+      triggerHaptic("notification");
+      shockwaves.push(new Shockwave(canvas.width / 2, canvas.height / 2, 180, "#39ff14"));
+    }
+
+    function runVictoryCinematic() {
+      victoryTimer++;
+
+      if (victoryTimer % 8 === 0 && victoryTimer < 140) {
+        for (let i = 0; i < 6; i++) {
+          const color = NEON_PALETTE[Math.floor(Math.random() * NEON_PALETTE.length)];
+          particles.push(new Particle(
+            canvas.width / 2 + (Math.random() * 160 - 80),
+            canvas.height / 2 + 50,
+            (Math.random() - 0.5) * 6,
+            -3 - Math.random() * 6,
+            color, Math.random() * 5 + 2, 0.018, "circle"
+          ));
+        }
+      }
+
+      ctx.save();
+      ctx.textAlign = "center";
+      const pulse = Math.sin(victoryTimer * 0.08) * 5;
+      ctx.font = "900 24px 'Segoe UI', Arial";
+      ctx.fillStyle = "#39ff14";
+      ctx.shadowColor = "#39ff14";
+      ctx.shadowBlur = 18 + pulse;
+      ctx.fillText(t("clear_title"), canvas.width / 2, canvas.height / 2 - 20);
+
+      ctx.font = "bold 13px 'Segoe UI', Arial";
+      ctx.fillStyle = "#00f0ff";
+      ctx.shadowColor = "#00f0ff";
+      ctx.shadowBlur = 8;
+      ctx.fillText(`${t("level_prefix")} ${currentLevel} TAMAMLANDI`, canvas.width / 2, canvas.height / 2 + 15);
+      ctx.restore();
+
+      if (victoryTimer >= TRANSITION_DURATION) {
+        if (currentLevel >= unlockedLevel) {
+          unlockedLevel = currentLevel + 1;
+          localStorage.setItem("bb_unlocked_lvl_v4", unlockedLevel.toString());
+        }
+        document.getElementById("modal-clear").style.display = "flex";
+      }
+    }
+
+    function startGameOverCinematic() {
+      gameState = "GAMEOVER_CINEMATIC";
+      gameOverTimer = 0;
+      screenShake = 20;
+      SoundEffects.loseJingle();
+      triggerHaptic("heavy");
+      shockwaves.push(new Shockwave(canvas.width / 2, FLOOR_Y - 20, 180, "#ff0055"));
+    }
+
+    function runGameOverCinematic() {
+      gameOverTimer++;
+
+      if (gameOverTimer % 10 === 0 && gameOverTimer < 130) {
+        for (let i = 0; i < 5; i++) {
+          particles.push(new Particle(
+            canvas.width / 2 + (Math.random() * 200 - 100),
+            FLOOR_Y - 50,
+            (Math.random() - 0.5) * 5,
+            -1 - Math.random() * 4,
+            { fill: "#ff0055", glow: "#ff0055" },
+            Math.random() * 6 + 2, 0.02, "square"
+          ));
+        }
+      }
+
+      ctx.save();
+      ctx.textAlign = "center";
+      const flash = Math.sin(gameOverTimer * 0.15);
+      ctx.font = "900 24px 'Segoe UI', Arial";
+      ctx.fillStyle = flash > 0 ? "#ff0055" : "#ffffff";
+      ctx.shadowColor = "#ff0055";
+      ctx.shadowBlur = 20;
+      ctx.fillText(t("gameover_title"), canvas.width / 2, canvas.height / 2 - 20);
+
+      ctx.font = "bold 13px 'Segoe UI', Arial";
+      ctx.fillStyle = "#a0aec0";
+      ctx.shadowBlur = 0;
+      ctx.fillText(t("gameover_desc"), canvas.width / 2, canvas.height / 2 + 15);
+      ctx.restore();
+
+      if (gameOverTimer >= TRANSITION_DURATION) {
+        document.getElementById("modal-gameover").style.display = "flex";
+      }
+    }
+
+    // ==========================================
+    // Top, Blok, Bomba Sınıfları
+    // ==========================================
+    class Ball {
+      constructor(x, y, dx, dy, colorObj) {
+        this.x = x;
+        this.y = y;
+        this.dx = dx;
+        this.dy = dy;
+        this.radius = BALL_RADIUS;
+        this.active = true;
+        this.returned = false;
+        this.color = colorObj || NEON_PALETTE[1];
+        this.history = [];
+        this.maxTrail = 4;
+      }
+      update(effectiveSpeed) {
+        if (!this.active || this.returned) return;
+
+        const angle = Math.atan2(this.dy, this.dx);
+        this.dx = Math.cos(angle) * effectiveSpeed;
+        this.dy = Math.sin(angle) * effectiveSpeed;
+
+        this.history.push({ x: this.x, y: this.y });
+        if (this.history.length > this.maxTrail) this.history.shift();
+
+        this.x += this.dx;
+        this.y += this.dy;
+
+        if (this.x - this.radius <= 0) {
+          this.x = this.radius;
+          this.dx = Math.abs(this.dx);
+          SoundEffects.hit();
+          triggerHaptic("light");
+        } else if (this.x + this.radius >= canvas.width) {
+          this.x = canvas.width - this.radius;
+          this.dx = -Math.abs(this.dx);
+          SoundEffects.hit();
+          triggerHaptic("light");
         }
 
-        function watchAdForExtraBalls() {
-            if (!adController) {
-                grantExtraBallsReward();
-                return;
-            }
-            adController.show()
-                .then(() => { grantExtraBallsReward(); })
-                .catch((err) => { console.warn("Reklam kapatıldı:", err); });
+        if (this.y - this.radius <= 0) {
+          this.y = this.radius;
+          this.dy = Math.abs(this.dy);
+          SoundEffects.hit();
         }
 
-        function grantExtraBallsReward() {
-            ballCount += 5;
-            document.getElementById('balls-text').innerText = ballCount;
-            document.getElementById('game-over-screen').style.display = 'none';
-            gameState = 'AIMING';
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        if (this.dy > 0 && this.y + this.radius >= FLOOR_Y) {
+          this.y = FLOOR_Y - this.radius;
+          this.returned = true;
+          this.active = false;
+          this.history = [];
+
+          const isFirst = balls.every(b => !b.returned || b === this);
+          if (isFirst) nextBaseBallX = this.x;
+        }
+      }
+      draw() {
+        if (!this.active && this.returned) return;
+
+        if (this.history.length > 1) {
+          ctx.save();
+          ctx.lineWidth = this.radius * 1.2;
+          ctx.lineCap = "round";
+          ctx.strokeStyle = this.color.glow;
+          ctx.shadowBlur = 8;
+          ctx.globalAlpha = 0.35;
+          ctx.beginPath();
+          ctx.moveTo(this.history[0].x, this.history[0].y);
+          for (let i = 1; i < this.history.length; i++) {
+            ctx.lineTo(this.history[i].x, this.history[i].y);
+          }
+          ctx.lineTo(this.x, this.y);
+          ctx.stroke();
+          ctx.restore();
         }
 
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.shadowColor = this.color.glow;
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = this.color.fill;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight - 45;
-            groundY = canvas.height - 30;
-            returnX = canvas.width / 2;
-        }
-        window.addEventListener('resize', resizeCanvas);
+    class Block {
+      constructor(c, r, hp, isElite = false) {
+        this.c = c;
+        this.r = r;
+        this.hp = hp;
+        this.isElite = isElite;
+        this.color = isElite ? NEON_PALETTE[0] : NEON_PALETTE[(c + r) % NEON_PALETTE.length];
+      }
+      get x() { return this.c * BLOCK_WIDTH; }
+      get y() { return this.r * BLOCK_HEIGHT + 14; }
 
-        let gameState = 'START';
-        let score = 0;
-        let round = 1;
-        let ballCount = 1;
-        let balls = [];
-        let bricks = [];
-        let aimStart = { x: 0, y: 0 };
-        let aimEnd = { x: 0, y: 0 };
-        let isAiming = false;
-        let returnX = 0;
-        let groundY = 0;
-        const COLS = 7;
+      draw() {
+        ctx.save();
+        const p = 3;
+        const bx = this.x + p;
+        const by = this.y + p;
+        const bw = BLOCK_WIDTH - p * 2;
+        const bh = BLOCK_HEIGHT - p * 2;
 
-        class Ball {
-            constructor(x, y, vx, vy) {
-                this.x = x; this.y = y; this.vx = vx; this.vy = vy;
-                this.radius = 6; this.active = false;
-            }
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                if (this.x - this.radius < 0) { this.x = this.radius; this.vx *= -1; }
-                if (this.x + this.radius > canvas.width) { this.x = canvas.width - this.radius; this.vx *= -1; }
-                if (this.y - this.radius < 0) { this.y = this.radius; this.vy *= -1; }
-                if (this.y > groundY) {
-                    this.active = false;
-                    this.vx = 0; this.vy = 0;
-                    this.x = returnX; this.y = groundY;
-                }
-            }
-            draw() {
-                ctx.fillStyle = '#00ffff';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
+        ctx.shadowColor = this.color.glow;
+        ctx.shadowBlur = this.isElite ? 16 : 8;
+        ctx.strokeStyle = this.color.fill;
+        ctx.lineWidth = this.isElite ? 2.5 : 1.8;
+        ctx.strokeRect(bx, by, bw, bh);
 
-        class Brick {
-            constructor(r, c, hp) {
-                this.r = r; this.c = c; this.hp = hp;
-                this.w = (canvas.width / COLS) - 4;
-                this.h = 40;
-                this.x = c * (canvas.width / COLS) + 2;
-                this.y = r * 45 + 10;
-            }
-            draw() {
-                if (this.hp <= 0) return;
-                ctx.fillStyle = this.hp > 10 ? '#ff0055' : '#0088ff';
-                ctx.fillRect(this.x, this.y, this.w, this.h);
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 14px Courier New';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(this.hp, this.x + this.w / 2, this.y + this.h / 2);
-            }
-        }
+        ctx.fillStyle = this.isElite ? "rgba(45, 10, 25, 0.9)" : "rgba(14, 18, 26, 0.9)";
+        ctx.fillRect(bx, by, bw, bh);
 
-        function startGame() {
-            resizeCanvas();
-            document.getElementById('start-screen').style.display = 'none';
-            document.getElementById('game-over-screen').style.display = 'none';
-            score = 0; round = 1; ballCount = 1;
-            bricks = [];
-            spawnRow();
-            setupBalls();
-            gameState = 'AIMING';
-        }
+        ctx.shadowBlur = 4;
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 12px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(this.hp, bx + bw / 2, by + bh / 2);
+        ctx.restore();
+      }
+    }
 
-        function spawnRow() {
-            for (let b of bricks) {
-                b.r++;
-                b.y = b.r * 45 + 10;
-                if (b.y >= groundY - 50 && b.hp > 0) gameOver();
-            }
-            for (let c = 0; c < COLS; c++) {
-                if (Math.random() > 0.3) bricks.push(new Brick(0, c, round * 2));
-            }
+    class DoubleBomb {
+      constructor(c, r) {
+        this.c = c;
+        this.r = r;
+        this.radius = 11;
+        this.pulse = 0;
+      }
+      get x() { return this.c * BLOCK_WIDTH + BLOCK_WIDTH / 2; }
+      get y() { return this.r * BLOCK_HEIGHT + 14 + BLOCK_HEIGHT / 2; }
+
+      triggerBlast() {
+        SoundEffects.bomb();
+        triggerHaptic("heavy");
+        screenShake = 16;
+        shockwaves.push(new Shockwave(this.x, this.y, 75, "#ff0055"));
+
+        for (let i = 0; i < 16; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const spd = 2 + Math.random() * 5;
+          particles.push(new Particle(
+            this.x, this.y,
+            Math.cos(angle) * spd, Math.sin(angle) * spd,
+            { fill: "#ff0055", glow: "#ffd700" },
+            Math.random() * 5 + 3, 0.02, "square"
+          ));
         }
 
-        function setupBalls() {
-            balls = [];
-            for (let i = 0; i < ballCount; i++) balls.push(new Ball(returnX, groundY, 0, 0));
+        for (let i = blocks.length - 1; i >= 0; i--) {
+          const b = blocks[i];
+          const diffC = Math.abs(b.c - this.c);
+          const diffR = Math.abs(b.r - this.r);
+          if (diffC <= 1 && diffR <= 1) {
+            b.hp = 0;
+            blocks.splice(i, 1);
+          }
+        }
+      }
+
+      draw() {
+        this.pulse += 0.08;
+        const pSize = Math.sin(this.pulse) * 2;
+        ctx.save();
+        ctx.shadowColor = "#ff0055";
+        ctx.shadowBlur = 14;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius + pSize, 0, Math.PI * 2);
+        ctx.fillStyle = "#ff0055";
+        ctx.fill();
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 11px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("💣", this.x, this.y);
+        ctx.restore();
+      }
+    }
+
+    class BonusItem {
+      constructor(c, r) {
+        this.c = c;
+        this.r = r;
+        this.radius = 8;
+        this.pulse = 0;
+      }
+      get x() { return this.c * BLOCK_WIDTH + BLOCK_WIDTH / 2; }
+      get y() { return this.r * BLOCK_HEIGHT + 14 + BLOCK_HEIGHT / 2; }
+
+      draw() {
+        this.pulse += 0.06;
+        const pSize = Math.sin(this.pulse) * 1.5;
+        ctx.save();
+        ctx.shadowColor = "#39ff14";
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius + pSize, 0, Math.PI * 2);
+        ctx.strokeStyle = "#39ff14";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 9px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("+1", this.x, this.y);
+        ctx.restore();
+      }
+    }
+
+    // ==========================================
+    // Dalga & Bölüm Akışı
+    // ==========================================
+    function getStartingBallsForLevel(lvl) {
+      return 10 + Math.floor((lvl - 1) / 2);
+    }
+
+    function spawnWaveRow(rIndex = 0) {
+      for (let c = 0; c < COLS; c++) {
+        const rand = Math.random();
+        if (currentLevel >= 3 && rand < 0.05 && !bombs.some(b => b.r === rIndex)) {
+          bombs.push(new DoubleBomb(c, rIndex));
+        } else if (rand < 0.025) {
+          bonusItems.push(new BonusItem(c, rIndex));
+        } else if (rand < 0.65) {
+          const isElite = (rand < 0.20);
+          const hp = isElite ? Math.round(currentBaseHp * 1.5) : currentBaseHp;
+          blocks.push(new Block(c, rIndex, hp, isElite));
+        }
+      }
+    }
+
+    function startStage(lvlNum) {
+      currentLevel = lvlNum;
+      blocks = [];
+      bonusItems = [];
+      bombs = [];
+      balls = [];
+      shockwaves = [];
+      beams = [];
+      particles = [];
+      isShooting = false;
+      isAiming = false;
+
+      baseBallX = canvas.width / 2;
+      baseBallY = FLOOR_Y - BALL_RADIUS;
+      nextBaseBallX = baseBallX;
+
+      ballCount = getStartingBallsForLevel(lvlNum);
+      extraBallsCollected = 0;
+
+      currentBaseHp = Math.round(7 + (lvlNum - 1) * 0.52);
+      remainingRows = 14 + Math.min(18, Math.floor(lvlNum / 4));
+
+      for (let r = 2; r >= 0; r--) {
+        spawnWaveRow(r);
+        remainingRows--;
+      }
+
+      gameState = "PLAYING";
+      hideAllScreens();
+      updateTexts();
+      document.getElementById("modal-clear").style.display = "none";
+      document.getElementById("modal-gameover").style.display = "none";
+    }
+
+    function advanceTurn() {
+      ballCount += extraBallsCollected;
+      extraBallsCollected = 0;
+      baseBallX = nextBaseBallX;
+      baseBallY = FLOOR_Y - BALL_RADIUS;
+
+      blocks.forEach(b => b.r++);
+      bonusItems.forEach(item => item.r++);
+      bombs.forEach(bomb => bomb.r++);
+
+      if (remainingRows > 0) {
+        spawnWaveRow(0);
+        remainingRows--;
+      }
+
+      if (blocks.some(b => b.y + BLOCK_HEIGHT >= FLOOR_Y)) {
+        startGameOverCinematic();
+        return;
+      }
+
+      if (remainingRows <= 0 && blocks.length === 0) {
+        startVictoryCinematic();
+        return;
+      }
+
+      ballsDisplay.innerText = `${t("ball_prefix")}: ${ballCount}`;
+    }
+
+    function handleCollisions(ball) {
+      for (let i = blocks.length - 1; i >= 0; i--) {
+        const b = blocks[i];
+        const closestX = Math.max(b.x, Math.min(ball.x, b.x + BLOCK_WIDTH));
+        const closestY = Math.max(b.y, Math.min(ball.y, b.y + BLOCK_HEIGHT));
+        const distX = ball.x - closestX;
+        const distY = ball.y - closestY;
+
+        if (distX * distX + distY * distY < ball.radius * ball.radius) {
+          const overlapLeft = ball.x - b.x;
+          const overlapRight = (b.x + BLOCK_WIDTH) - ball.x;
+          const overlapTop = ball.y - b.y;
+          const overlapBottom = (b.y + BLOCK_HEIGHT) - ball.y;
+
+          if (Math.min(overlapLeft, overlapRight) < Math.min(overlapTop, overlapBottom)) {
+            ball.dx *= -1;
+          } else {
+            ball.dy *= -1;
+          }
+
+          b.hp--;
+          SoundEffects.hit();
+          triggerHaptic("light");
+
+          if (b.hp <= 0) {
+            SoundEffects.break();
+            blocks.splice(i, 1);
+          }
+          break;
+        }
+      }
+
+      for (let i = bombs.length - 1; i >= 0; i--) {
+        const bomb = bombs[i];
+        const distX = ball.x - bomb.x;
+        const distY = ball.y - bomb.y;
+        if (Math.hypot(distX, distY) < ball.radius + bomb.radius) {
+          bomb.triggerBlast();
+          bombs.splice(i, 1);
+        }
+      }
+
+      for (let i = bonusItems.length - 1; i >= 0; i--) {
+        const item = bonusItems[i];
+        const distX = ball.x - item.x;
+        const distY = ball.y - item.y;
+        if (Math.hypot(distX, distY) < ball.radius + item.radius) {
+          extraBallsCollected++;
+          SoundEffects.powerup();
+          triggerHaptic("notification");
+          beams.push(new BeamEffect(item.x, item.y));
+          bonusItems.splice(i, 1);
+        }
+      }
+    }
+
+    // ==========================================
+    // Nişan Kontrolleri (Ölçeklemeye Uyumlu)
+    // ==========================================
+    function getCoords(e) {
+      const rect = canvas.getBoundingClientRect();
+      const cx = e.clientX || (e.touches && e.touches[0].clientX);
+      const cy = e.clientY || (e.touches && e.touches[0].clientY);
+      // CSS transform ölçeklemesi uygulandığında bile piksel hassasiyeti sağlar
+      return {
+        x: (cx - rect.left) * (canvas.width / rect.width),
+        y: (cy - rect.top) * (canvas.height / rect.height)
+      };
+    }
+
+    function onStart(e) {
+      if (isShooting || gameState !== "PLAYING") return;
+      initAudio();
+      aimStartPos = getCoords(e);
+      isAiming = true;
+    }
+
+    function onMove(e) {
+      if (!isAiming || gameState !== "PLAYING") return;
+      aimCurrentPos = getCoords(e);
+
+      const dx = aimStartPos.x - aimCurrentPos.x;
+      const dy = aimStartPos.y - aimCurrentPos.y;
+
+      if (Math.hypot(dx, dy) > 8) {
+        let calculated = Math.atan2(-dy, -dx);
+        if (calculated > 0) calculated = -calculated;
+
+        if (calculated > MIN_LAUNCH_ANGLE) calculated = MIN_LAUNCH_ANGLE;
+        else if (calculated < MAX_LAUNCH_ANGLE) calculated = MAX_LAUNCH_ANGLE;
+
+        launchAngle = calculated;
+      }
+    }
+
+    function onEnd() {
+      if (!isAiming || isShooting || gameState !== "PLAYING") return;
+      isAiming = false;
+      isShooting = true;
+      ballsToLaunch = ballCount;
+      balls = [];
+      launchTimer = LAUNCH_INTERVAL;
+    }
+
+    canvas.addEventListener("mousedown", onStart);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onEnd);
+    canvas.addEventListener("touchstart", onStart, { passive: true });
+    window.addEventListener("touchmove", onMove, { passive: true });
+    window.addEventListener("touchend", onEnd);
+
+    // ==========================================
+    // Menü Yönetimi
+    // ==========================================
+    const homeScreen = document.getElementById("home-screen");
+    const levelsScreen = document.getElementById("levels-screen");
+    const settingsScreen = document.getElementById("settings-screen");
+
+    function hideAllScreens() {
+      homeScreen.classList.remove("active");
+      levelsScreen.classList.remove("active");
+      settingsScreen.classList.remove("active");
+    }
+
+    function openHomeScreen() {
+      gameState = "MENU";
+      hideAllScreens();
+      homeScreen.classList.add("active");
+    }
+
+    function openLevelsScreen() {
+      hideAllScreens();
+      levelsScreen.classList.add("active");
+      buildLevelGrid();
+    }
+
+    function openSettingsScreen() {
+      hideAllScreens();
+      settingsScreen.classList.add("active");
+    }
+
+    document.getElementById("btn-home-play").onclick = () => startStage(unlockedLevel);
+    document.getElementById("btn-home-levels").onclick = openLevelsScreen;
+    document.getElementById("btn-home-settings").onclick = openSettingsScreen;
+    document.getElementById("btn-levels-back").onclick = openHomeScreen;
+    document.getElementById("btn-settings-back").onclick = openHomeScreen;
+    document.getElementById("btn-top-menu").onclick = openHomeScreen;
+
+    const btnSound = document.getElementById("btn-toggle-sound");
+    const btnHaptic = document.getElementById("btn-toggle-haptic");
+    const btnLang = document.getElementById("btn-toggle-lang");
+
+    function updateSettingsUI() {
+      btnSound.innerText = soundEnabled ? t("btn_on") : t("btn_off");
+      btnSound.classList.toggle("off", !soundEnabled);
+
+      btnHaptic.innerText = hapticEnabled ? t("btn_on") : t("btn_off");
+      btnHaptic.classList.toggle("off", !hapticEnabled);
+
+      btnLang.innerText = t("lang_name");
+    }
+
+    btnSound.onclick = () => {
+      soundEnabled = !soundEnabled;
+      localStorage.setItem("bb_sound", soundEnabled);
+      if (soundEnabled) SoundEffects.hit();
+      updateSettingsUI();
+    };
+
+    btnHaptic.onclick = () => {
+      hapticEnabled = !hapticEnabled;
+      localStorage.setItem("bb_haptic", hapticEnabled);
+      if (hapticEnabled) triggerHaptic("heavy");
+      updateSettingsUI();
+    };
+
+    btnLang.onclick = () => {
+      currentLang = currentLang === "tr" ? "en" : "tr";
+      localStorage.setItem("bb_lang", currentLang);
+      triggerHaptic("light");
+      updateTexts();
+      updateSettingsUI();
+    };
+
+    document.getElementById("btn-new-game").onclick = () => {
+      if (confirm(t("new_game_prompt"))) {
+        unlockedLevel = 1;
+        isAllUnlocked = false;
+        isAdFree = false;
+        localStorage.setItem("bb_unlocked_lvl_v4", "1");
+        localStorage.removeItem("bb_all_unlocked_v4");
+        localStorage.removeItem("bb_ad_free_v4");
+        triggerHaptic("heavy");
+        openHomeScreen();
+      }
+    };
+
+    function buildLevelGrid() {
+      const tabContainer = document.getElementById("tabContainer");
+      tabContainer.innerHTML = "";
+      const maxLvl = Math.max(100, Math.ceil(unlockedLevel / 20) * 20);
+      const totalTabs = maxLvl / 20;
+
+      for (let i = 0; i < totalTabs; i++) {
+        const start = i * 20 + 1;
+        const end = start + 19;
+        const btn = document.createElement("button");
+        btn.className = `tab-btn ${i === 0 ? "active" : ""}`;
+        btn.innerText = `${start}-${end}`;
+        btn.onclick = () => {
+          document.querySelectorAll(".tab-btn").forEach((b, idx) => b.classList.toggle("active", idx === i));
+          renderCards(i);
+        };
+        tabContainer.appendChild(btn);
+      }
+      renderCards(0);
+    }
+
+    function renderCards(tabIdx) {
+      const grid = document.getElementById("levelGrid");
+      grid.innerHTML = "";
+      const start = tabIdx * 20 + 1;
+      const end = start + 20;
+
+      for (let i = start; i < end; i++) {
+        const card = document.createElement("div");
+        card.className = "level-card";
+        if (isAllUnlocked || i <= unlockedLevel) {
+          card.innerText = i;
+          card.onclick = () => startStage(i);
+        } else {
+          card.className += " locked";
+          card.innerHTML = `${i}<span style="font-size:10px; margin-top:2px;">🔒</span>`;
+        }
+        grid.appendChild(card);
+      }
+    }
+
+    // Buton Tetikleyicileri (Adsgram Entegre)
+    document.getElementById("btn-watch-ad").onclick = () => {
+      showRewardedAd(() => {
+        ballCount += 2;
+        ballsDisplay.innerText = `${t("ball_prefix")}: ${ballCount}`;
+        beams.push(new BeamEffect(baseBallX, FLOOR_Y));
+        alert(t("ad_btn") + " eklendi!");
+      });
+    };
+
+    document.getElementById("btn-retry-level").onclick = () => {
+      showRewardedAd(() => {
+        startStage(currentLevel);
+      });
+    };
+
+    document.getElementById("btn-next-level").onclick = () => startStage(currentLevel + 1);
+
+    document.getElementById("btn-skip-level").onclick = () => {
+      unlockedLevel = Math.max(unlockedLevel, currentLevel + 1);
+      localStorage.setItem("bb_unlocked_lvl_v4", unlockedLevel.toString());
+      startStage(currentLevel + 1);
+    };
+
+    document.getElementById("btn-buy-stars").onclick = () => {
+      if (confirm(currentLang === "tr" ? "⭐ 10 Stars ile +5 Top almak istiyor musunuz?" : "Get +5 Balls for 10 Stars?")) {
+        ballCount += 5;
+        ballsDisplay.innerText = `${t("ball_prefix")}: ${ballCount}`;
+        beams.push(new BeamEffect(baseBallX, FLOOR_Y));
+        triggerHaptic("notification");
+      }
+    };
+
+    document.getElementById("btn-unlock-all").onclick = () => {
+      if (confirm(currentLang === "tr" ? "👑 75 Stars karşılığında tüm bölümleri açıp reklamları kaldırmak istiyor musunuz?" : "Unlock all and remove ads for 75 Stars?")) {
+        isAllUnlocked = true;
+        isAdFree = true;
+        localStorage.setItem("bb_all_unlocked_v4", "true");
+        localStorage.setItem("bb_ad_free_v4", "true");
+        triggerHaptic("notification");
+        buildLevelGrid();
+        updateTexts();
+      }
+    };
+
+    function updateTexts() {
+      document.getElementById("lbl-home-play").innerText = t("home_play");
+      document.getElementById("lbl-home-levels").innerText = t("home_levels");
+      document.getElementById("lbl-home-settings").innerText = t("home_settings");
+      document.getElementById("btn-top-menu").innerText = t("top_menu");
+      document.getElementById("lbl-levels-title").innerText = t("levels_title");
+      document.getElementById("lbl-settings-title").innerText = t("settings_title");
+      document.getElementById("lbl-setting-sound").innerText = t("setting_sound");
+      document.getElementById("lbl-setting-haptic").innerText = t("setting_haptic");
+      document.getElementById("lbl-setting-lang").innerText = t("setting_lang");
+      document.getElementById("btn-levels-back").innerText = t("btn_back");
+      document.getElementById("btn-settings-back").innerText = t("btn_back");
+
+      document.getElementById("label-ad").innerText = t("ad_btn");
+      document.getElementById("label-stars").innerText = t("stars_btn");
+      document.getElementById("label-unlock").innerText = t("unlock_btn");
+      document.getElementById("clear-modal-title").innerText = t("clear_title");
+      document.getElementById("gameover-modal-title").innerText = t("gameover_title");
+      document.getElementById("btn-skip-level").innerText = t("skip_btn");
+
+      levelDisplay.innerText = `${t("level_prefix")} ${currentLevel}`;
+      ballsDisplay.innerText = `${t("ball_prefix")}: ${ballCount}`;
+
+      document.getElementById("btn-retry-level").innerText = isAdFree ? t("retry_vip_btn") : t("retry_ad_btn");
+      document.getElementById("btn-next-level").innerText = isAdFree ? t("next_vip_btn") : t("next_btn");
+    }
+
+    // ==========================================
+    // Oyun Döngüsü
+    // ==========================================
+    function loop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      if (screenShake > 0) {
+        ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+        screenShake *= 0.88;
+        if (screenShake < 0.5) screenShake = 0;
+      }
+
+      ctx.strokeStyle = "rgba(19, 26, 38, 0.4)";
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += 40) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+      }
+
+      if (gameState === "INTRO") {
+        runIntroLogic();
+      } else if (gameState === "VICTORY_CINEMATIC") {
+        runVictoryCinematic();
+      } else if (gameState === "GAMEOVER_CINEMATIC") {
+        runGameOverCinematic();
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw();
+        if (particles[i].alpha <= 0) particles.splice(i, 1);
+      }
+      for (let i = shockwaves.length - 1; i >= 0; i--) {
+        shockwaves[i].update();
+        shockwaves[i].draw();
+        if (shockwaves[i].alpha <= 0) shockwaves.splice(i, 1);
+      }
+      for (let i = beams.length - 1; i >= 0; i--) {
+        beams[i].update();
+        beams[i].draw();
+        if (beams[i].alpha <= 0) beams.splice(i, 1);
+      }
+
+      if (gameState === "PLAYING") {
+        const activeBalls = balls.filter(b => b.active && !b.returned);
+        let speed = BASE_BALL_SPEED;
+        if (ballsToLaunch === 0 && activeBalls.length > 0 && activeBalls.length <= 2) {
+          speed = BASE_BALL_SPEED * 2.2;
         }
 
-        function gameOver() {
-            gameState = 'GAMEOVER';
-            document.getElementById('final-score').innerText = score;
-            document.getElementById('game-over-screen').style.display = 'flex';
+        if (isShooting && ballsToLaunch > 0) {
+          launchTimer++;
+          if (launchTimer >= LAUNCH_INTERVAL) {
+            const dx = Math.cos(launchAngle) * BASE_BALL_SPEED;
+            const dy = Math.sin(launchAngle) * BASE_BALL_SPEED;
+            balls.push(new Ball(baseBallX, baseBallY, dx, dy, NEON_PALETTE[balls.length % NEON_PALETTE.length]));
+            ballsToLaunch--;
+            launchTimer = 0;
+          }
         }
 
-        canvas.addEventListener('pointerdown', (e) => {
-            if (gameState !== 'AIMING') return;
-            isAiming = true;
-            const rect = canvas.getBoundingClientRect();
-            aimStart = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        balls.forEach(b => {
+          b.update(speed);
+          if (b.active) handleCollisions(b);
+          b.draw();
         });
 
-        canvas.addEventListener('pointermove', (e) => {
-            if (!isAiming) return;
-            const rect = canvas.getBoundingClientRect();
-            aimEnd = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-        });
+        blocks.forEach(b => b.draw());
+        bonusItems.forEach(item => item.draw());
+        bombs.forEach(bomb => bomb.draw());
 
-        canvas.addEventListener('pointerup', () => {
-            if (!isAiming) return;
-            isAiming = false;
-            let dx = aimStart.x - aimEnd.x;
-            let dy = aimStart.y - aimEnd.y;
-            let angle = Math.atan2(dy, dx);
-            if (angle > -0.1) angle = -0.1;
-            if (angle < -Math.PI + 0.1) angle = -Math.PI + 0.1;
-            let speed = 9;
-            let vx = Math.cos(angle) * speed;
-            let vy = Math.sin(angle) * speed;
-            gameState = 'PLAYING';
-            balls.forEach((ball, index) => {
-                setTimeout(() => {
-                    ball.x = returnX; ball.y = groundY;
-                    ball.vx = vx; ball.vy = vy; ball.active = true;
-                }, index * 80);
-            });
-        });
-
-        function update() {
-            if (gameState === 'PLAYING') {
-                let activeCount = 0;
-                for (let ball of balls) {
-                    if (ball.active) {
-                        ball.update();
-                        activeCount++;
-                        for (let brick of bricks) {
-                            if (brick.hp > 0) {
-                                if (ball.x > brick.x && ball.x < brick.x + brick.w &&
-                                    ball.y > brick.y && ball.y < brick.y + brick.h) {
-                                    brick.hp--; score += 10; ball.vy *= -1;
-                                }
-                            }
-                        }
-                    }
-                }
-                if (activeCount === 0) {
-                    round++;
-                    document.getElementById('round-text').innerText = round;
-                    document.getElementById('balls-text').innerText = ballCount;
-                    spawnRow();
-                    if (gameState !== 'GAMEOVER') gameState = 'AIMING';
-                }
-            }
+        if (isAiming && !isShooting) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.setLineDash([6, 6]);
+          ctx.moveTo(baseBallX, baseBallY);
+          ctx.lineTo(baseBallX + Math.cos(launchAngle) * 240, baseBallY + Math.sin(launchAngle) * 240);
+          ctx.strokeStyle = "rgba(0, 240, 255, 0.9)";
+          ctx.shadowColor = "#00f0ff";
+          ctx.shadowBlur = 8;
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+          ctx.restore();
         }
 
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (let brick of bricks) brick.draw();
-            for (let ball of balls) ball.draw();
-            if (isAiming) {
-                ctx.strokeStyle = '#00ffff';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([4, 4]);
-                ctx.beginPath();
-                ctx.moveTo(returnX, groundY);
-                let dx = aimStart.x - aimEnd.x;
-                let dy = aimStart.y - aimEnd.y;
-                ctx.lineTo(returnX + dx * 2, groundY + dy * 2);
-                ctx.stroke();
-                ctx.setLineDash([]);
-            }
+        ctx.strokeStyle = "#161d28";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, FLOOR_Y);
+        ctx.lineTo(canvas.width, FLOOR_Y);
+        ctx.stroke();
+
+        if (!isShooting) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(baseBallX, baseBallY, BALL_RADIUS, 0, Math.PI * 2);
+          ctx.fillStyle = "#ffffff";
+          ctx.shadowColor = "#00f0ff";
+          ctx.shadowBlur = 12;
+          ctx.fill();
+          ctx.restore();
         }
 
-        function loop() {
-            update();
-            draw();
-            requestAnimationFrame(loop);
+        if (isShooting && ballsToLaunch === 0 && balls.every(b => b.returned)) {
+          isShooting = false;
+          advanceTurn();
         }
+      }
 
-        resizeCanvas();
-        loop();
-    </script>
+      ctx.restore();
+      requestAnimationFrame(loop);
+    }
+
+    // Başlatıcılar
+    autoScale();
+    updateTexts();
+    updateSettingsUI();
+    setupIntroScene();
+    requestAnimationFrame(loop);
+  </script>
 </body>
 </html>
