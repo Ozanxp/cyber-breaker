@@ -30,7 +30,6 @@
       overflow: hidden;
       color: #fff;
     }
-    /* Mobilde tam ortalama ve dinamik ölçekleme sağlayan ana kapsayıcı */
     #game-container {
       position: relative;
       width: 360px;
@@ -50,7 +49,6 @@
       display: block;
     }
 
-    /* Üst Bilgi Barı */
     #ui-top-bar {
       height: 44px;
       display: flex;
@@ -86,7 +84,6 @@
     }
     .top-btn:active { transform: scale(0.95); }
 
-    /* Alt Bar */
     #ui-bottom-bar {
       height: 52px;
       display: flex;
@@ -130,7 +127,6 @@
       box-shadow: 0 0 12px rgba(255, 0, 127, 0.35);
     }
 
-    /* Menü Pencereleri */
     .screen-overlay {
       position: absolute;
       top: 0;
@@ -434,39 +430,46 @@
 
   <script>
     // ==========================================
+    // ÖNBELLEK TEMİZLİĞİ VE SÜRÜM KONTROLÜ
+    // ==========================================
+    localStorage.removeItem("bb_all_unlocked_v4");
+    localStorage.removeItem("bb_ad_free_v4");
+
+    // ==========================================
     // ADSGRAM REKLAM YAPILANDIRMASI
     // ==========================================
-    // Panelinden aldığın onaylı Block ID bağlandı
     const ADSGRAM_BLOCK_ID = "46174";
 
     function showRewardedAd(onSuccess) {
-      if (isAdFree) {
-        if (onSuccess) onSuccess();
-        return;
-      }
-
-      if (window.Adsgram && ADSGRAM_BLOCK_ID !== "YOUR_BLOCK_ID_HERE") {
-        window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID })
-          .show()
+      if (typeof window.Adsgram !== "undefined") {
+        const adController = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID, debug: false });
+        adController.show()
           .then((result) => {
             triggerHaptic("notification");
             if (onSuccess) onSuccess();
           })
           .catch((err) => {
-            console.warn("Reklam gösterilemedi:", err);
-            alert(currentLang === "tr" ? "Reklam yüklenemedi, lütfen tekrar deneyin." : "Ad failed to load.");
+            console.error("Adsgram hatası:", err);
+            const errDescription = err?.description || err?.message || JSON.stringify(err);
+            alert((currentLang === "tr" ? "Reklam yüklenemedi: " : "Ad failed: ") + errDescription);
           });
       } else {
-        alert(currentLang === "tr" ? "🎬 Reklam oynatılıyor (Test Modu)..." : "🎬 Playing ad (Test Mode)...");
-        setTimeout(() => {
-          triggerHaptic("notification");
-          if (onSuccess) onSuccess();
-        }, 600);
+        alert(currentLang === "tr" ? "Adsgram SDK henüz yüklenemedi. İnternet bağlantınızı kontrol edin." : "Adsgram SDK not loaded.");
       }
     }
 
     // ==========================================
-    // EKRANI DİNAMİK ÖLÇEKLENDİRME (MOBİL FIX)
+    // TELEGRAM STARS (XTR) ENTEGRASYON YAPISI
+    // ==========================================
+    function triggerStarsPayment(itemType, amountStars, onSuccess) {
+      const tg = window.Telegram?.WebApp;
+      alert(currentLang === "tr"
+        ? `⭐ Telegram Stars Satın Alma (${amountStars} Stars):\n\nBu işlem için botunuzun 'createInvoiceLink' API metodundan fatura linki oluşturulmalıdır. Fatura linki hazır olduğunda Telegram onay penceresi doğrudan açılacaktır.`
+        : `⭐ Telegram Stars Purchase (${amountStars} Stars):\n\nRequires backend invoice link via 'createInvoiceLink'.`);
+    }
+
+    // ==========================================
+    // DİNAMİK MOBİL EKRAN ÖLÇEKLENDİRME
     // ==========================================
     function autoScale() {
       const container = document.getElementById("game-container");
@@ -480,7 +483,7 @@
     window.addEventListener("orientationchange", () => setTimeout(autoScale, 200));
 
     // ==========================================
-    // Çeviri Sözlüğü (TR / EN)
+    // ÇEVİRİ SÖZLÜĞÜ (TR / EN)
     // ==========================================
     const TRANSLATIONS = {
       tr: {
@@ -504,16 +507,13 @@
         unlock_btn: "Kilitleri Aç (75⭐)",
         clear_title: "BÖLÜM GEÇİLDİ!",
         clear_desc: "Tüm bloklar temizlendi.",
-        clear_vip_desc: "👑 VIP Üye: Reklamsız doğrudan geçiş aktif!",
         next_btn: "Sonraki Bölüm",
-        next_vip_btn: "Sonraki Bölüm (Doğrudan Geç)",
         gameover_title: "SAVUNMA ÇÖKTÜ",
         gameover_desc: "Tuğlalar tabana ulaştı.",
         retry_ad_btn: "Tekrar Dene (Reklam)",
-        retry_vip_btn: "Tekrar Dene (Doğrudan Başla)",
         skip_btn: "⭐ Bölümü Geç (15 Stars)",
         beam_text: "+1 TOP!",
-        new_game_prompt: "Oyunu sıfırlayıp 1. bölüme dönmek istediğine emin misin?",
+        new_game_prompt: "Oyunu sıfırlayıp 1. bölüme dönmek istediğinize emin misiniz?",
         intro_sub: "Sistem Başlatılıyor..."
       },
       en: {
@@ -537,13 +537,10 @@
         unlock_btn: "Unlock All (75⭐)",
         clear_title: "STAGE CLEAR!",
         clear_desc: "All bricks destroyed.",
-        clear_vip_desc: "👑 VIP Member: Instant pass active!",
         next_btn: "Next Stage",
-        next_vip_btn: "Next Stage (Instant)",
         gameover_title: "SYSTEM FAILURE",
         gameover_desc: "Bricks reached bottom line.",
         retry_ad_btn: "Retry (Watch Ad)",
-        retry_vip_btn: "Retry (Instant)",
         skip_btn: "⭐ Skip Stage (15 Stars)",
         beam_text: "+1 BALL!",
         new_game_prompt: "Are you sure you want to reset all progress to Level 1?",
@@ -560,7 +557,7 @@
     }
 
     // ==========================================
-    // Web Audio API Ses Motoru
+    // SES MOTORU (WEB AUDIO API)
     // ==========================================
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
@@ -634,7 +631,7 @@
     };
 
     // ==========================================
-    // Telegram ve Haptik Titreşim
+    // TELEGRAM VE HAPTİK GERİ BİLDİRİM
     // ==========================================
     const tg = window.Telegram?.WebApp;
     if (tg) {
@@ -656,7 +653,7 @@
     }
 
     // ==========================================
-    // Oyun Sabitleri
+    // OYUN MOTORU & PARÇACIK SINIFLARI
     // ==========================================
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
@@ -682,9 +679,7 @@
       { fill: "#b026ff", glow: "#b026ff" }
     ];
 
-    let isAllUnlocked = localStorage.getItem("bb_all_unlocked_v4") === "true";
-    let isAdFree = localStorage.getItem("bb_ad_free_v4") === "true";
-    let unlockedLevel = parseInt(localStorage.getItem("bb_unlocked_lvl_v4") || "1", 10);
+    let unlockedLevel = parseInt(localStorage.getItem("bb_unlocked_lvl_v6") || "1", 10);
     if (isNaN(unlockedLevel) || unlockedLevel < 1) unlockedLevel = 1;
 
     let currentLevel = 1;
@@ -707,7 +702,6 @@
     let remainingRows = 0;
     let screenShake = 0;
 
-    // Zamanlayıcılar: Açılış 4sn (240 kare), Geçişler 3sn (180 kare)
     const INTRO_DURATION = 240;
     const TRANSITION_DURATION = 180;
     let introTimer = 0;
@@ -723,9 +717,6 @@
     let beams = [];
     let introBlocks = [];
 
-    // ==========================================
-    // Efektler
-    // ==========================================
     class BeamEffect {
       constructor(x, y) {
         this.x = x;
@@ -818,9 +809,6 @@
       }
     }
 
-    // ==========================================
-    // İntro Sahnesi
-    // ==========================================
     function setupIntroScene() {
       gameState = "INTRO";
       introTimer = 0;
@@ -845,15 +833,10 @@
 
     function runIntroLogic() {
       introTimer++;
-
-      if (introTimer === 1) {
-        SoundEffects.introMusic();
-      }
+      if (introTimer === 1) SoundEffects.introMusic();
 
       introBlocks.forEach((b, idx) => {
-        if (introTimer > idx * 3 && b.alpha < 1) {
-          b.alpha += 0.08;
-        }
+        if (introTimer > idx * 3 && b.alpha < 1) b.alpha += 0.08;
       });
 
       if (introTimer === 75) {
@@ -915,9 +898,7 @@
         ctx.restore();
       }
 
-      if (introTimer >= INTRO_DURATION) {
-        openHomeScreen();
-      }
+      if (introTimer >= INTRO_DURATION) openHomeScreen();
     }
 
     function startVictoryCinematic() {
@@ -930,7 +911,6 @@
 
     function runVictoryCinematic() {
       victoryTimer++;
-
       if (victoryTimer % 8 === 0 && victoryTimer < 140) {
         for (let i = 0; i < 6; i++) {
           const color = NEON_PALETTE[Math.floor(Math.random() * NEON_PALETTE.length)];
@@ -963,7 +943,7 @@
       if (victoryTimer >= TRANSITION_DURATION) {
         if (currentLevel >= unlockedLevel) {
           unlockedLevel = currentLevel + 1;
-          localStorage.setItem("bb_unlocked_lvl_v4", unlockedLevel.toString());
+          localStorage.setItem("bb_unlocked_lvl_v6", unlockedLevel.toString());
         }
         document.getElementById("modal-clear").style.display = "flex";
       }
@@ -980,7 +960,6 @@
 
     function runGameOverCinematic() {
       gameOverTimer++;
-
       if (gameOverTimer % 10 === 0 && gameOverTimer < 130) {
         for (let i = 0; i < 5; i++) {
           particles.push(new Particle(
@@ -1014,9 +993,6 @@
       }
     }
 
-    // ==========================================
-    // Top, Blok, Bomba Sınıfları
-    // ==========================================
     class Ball {
       constructor(x, y, dx, dy, colorObj) {
         this.x = x;
@@ -1230,9 +1206,6 @@
       }
     }
 
-    // ==========================================
-    // Dalga & Bölüm Akışı
-    // ==========================================
     function getStartingBallsForLevel(lvl) {
       return 10 + Math.floor((lvl - 1) / 2);
     }
@@ -1370,14 +1343,10 @@
       }
     }
 
-    // ==========================================
-    // Nişan Kontrolleri (Ölçeklemeye Uyumlu)
-    // ==========================================
     function getCoords(e) {
       const rect = canvas.getBoundingClientRect();
       const cx = e.clientX || (e.touches && e.touches[0].clientX);
       const cy = e.clientY || (e.touches && e.touches[0].clientY);
-      // CSS transform ölçeklemesi uygulandığında bile piksel hassasiyeti sağlar
       return {
         x: (cx - rect.left) * (canvas.width / rect.width),
         y: (cy - rect.top) * (canvas.height / rect.height)
@@ -1425,9 +1394,6 @@
     window.addEventListener("touchmove", onMove, { passive: true });
     window.addEventListener("touchend", onEnd);
 
-    // ==========================================
-    // Menü Yönetimi
-    // ==========================================
     const homeScreen = document.getElementById("home-screen");
     const levelsScreen = document.getElementById("levels-screen");
     const settingsScreen = document.getElementById("settings-screen");
@@ -1501,11 +1467,7 @@
     document.getElementById("btn-new-game").onclick = () => {
       if (confirm(t("new_game_prompt"))) {
         unlockedLevel = 1;
-        isAllUnlocked = false;
-        isAdFree = false;
-        localStorage.setItem("bb_unlocked_lvl_v4", "1");
-        localStorage.removeItem("bb_all_unlocked_v4");
-        localStorage.removeItem("bb_ad_free_v4");
+        localStorage.setItem("bb_unlocked_lvl_v6", "1");
         triggerHaptic("heavy");
         openHomeScreen();
       }
@@ -1541,7 +1503,7 @@
       for (let i = start; i < end; i++) {
         const card = document.createElement("div");
         card.className = "level-card";
-        if (isAllUnlocked || i <= unlockedLevel) {
+        if (i <= unlockedLevel) {
           card.innerText = i;
           card.onclick = () => startStage(i);
         } else {
@@ -1552,13 +1514,12 @@
       }
     }
 
-    // Buton Tetikleyicileri (Adsgram Entegre)
+    // Buton Tetikleyicileri
     document.getElementById("btn-watch-ad").onclick = () => {
       showRewardedAd(() => {
         ballCount += 2;
         ballsDisplay.innerText = `${t("ball_prefix")}: ${ballCount}`;
         beams.push(new BeamEffect(baseBallX, FLOOR_Y));
-        alert(t("ad_btn") + " eklendi!");
       });
     };
 
@@ -1570,31 +1531,29 @@
 
     document.getElementById("btn-next-level").onclick = () => startStage(currentLevel + 1);
 
-    document.getElementById("btn-skip-level").onclick = () => {
-      unlockedLevel = Math.max(unlockedLevel, currentLevel + 1);
-      localStorage.setItem("bb_unlocked_lvl_v4", unlockedLevel.toString());
-      startStage(currentLevel + 1);
-    };
-
     document.getElementById("btn-buy-stars").onclick = () => {
-      if (confirm(currentLang === "tr" ? "⭐ 10 Stars ile +5 Top almak istiyor musunuz?" : "Get +5 Balls for 10 Stars?")) {
+      triggerStarsPayment("extra_balls", 10, () => {
         ballCount += 5;
         ballsDisplay.innerText = `${t("ball_prefix")}: ${ballCount}`;
         beams.push(new BeamEffect(baseBallX, FLOOR_Y));
         triggerHaptic("notification");
-      }
+      });
     };
 
     document.getElementById("btn-unlock-all").onclick = () => {
-      if (confirm(currentLang === "tr" ? "👑 75 Stars karşılığında tüm bölümleri açıp reklamları kaldırmak istiyor musunuz?" : "Unlock all and remove ads for 75 Stars?")) {
-        isAllUnlocked = true;
-        isAdFree = true;
-        localStorage.setItem("bb_all_unlocked_v4", "true");
-        localStorage.setItem("bb_ad_free_v4", "true");
-        triggerHaptic("notification");
+      triggerStarsPayment("unlock_all", 75, () => {
+        unlockedLevel = 100;
+        localStorage.setItem("bb_unlocked_lvl_v6", "100");
         buildLevelGrid();
-        updateTexts();
-      }
+      });
+    };
+
+    document.getElementById("btn-skip-level").onclick = () => {
+      triggerStarsPayment("skip_level", 15, () => {
+        unlockedLevel = Math.max(unlockedLevel, currentLevel + 1);
+        localStorage.setItem("bb_unlocked_lvl_v6", unlockedLevel.toString());
+        startStage(currentLevel + 1);
+      });
     };
 
     function updateTexts() {
@@ -1619,14 +1578,10 @@
 
       levelDisplay.innerText = `${t("level_prefix")} ${currentLevel}`;
       ballsDisplay.innerText = `${t("ball_prefix")}: ${ballCount}`;
-
-      document.getElementById("btn-retry-level").innerText = isAdFree ? t("retry_vip_btn") : t("retry_ad_btn");
-      document.getElementById("btn-next-level").innerText = isAdFree ? t("next_vip_btn") : t("next_btn");
+      document.getElementById("btn-retry-level").innerText = t("retry_ad_btn");
+      document.getElementById("btn-next-level").innerText = t("next_btn");
     }
 
-    // ==========================================
-    // Oyun Döngüsü
-    // ==========================================
     function loop() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -1737,7 +1692,6 @@
       requestAnimationFrame(loop);
     }
 
-    // Başlatıcılar
     autoScale();
     updateTexts();
     updateSettingsUI();
