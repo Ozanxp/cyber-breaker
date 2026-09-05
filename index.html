@@ -60,7 +60,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(13, 15, 24, 0.9);
+            background: rgba(13, 15, 24, 0.95);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -102,17 +102,17 @@
 <body>
 
     <div id="game-container">
-        <!-- Üst Bilgi Paneli (HUD) -->
+        <!-- Üst Bilgi Paneli -->
         <div id="hud">
             <div>TUR: <span id="round-text">1</span></div>
             <div>TOP: <span id="balls-text">1</span></div>
             <div>SKOR: <span id="score-text">0</span></div>
         </div>
 
-        <!-- Oyun Alanı Canvas -->
+        <!-- Oyun Alanı -->
         <canvas id="gameCanvas"></canvas>
 
-        <!-- Giriş / Başlangıç Ekranı -->
+        <!-- Başlangıç Ekranı -->
         <div id="start-screen" class="ui-overlay">
             <h1>CYBER BREAKER</h1>
             <p>Topları fırlat, tuğlaları kır, tur geç!</p>
@@ -129,11 +129,10 @@
     </div>
 
     <script>
-        // --- TELEGRAM & ADSGRAM YAPILANDIRMASI ---
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        const ADSGRAM_BLOCK_ID = "46174"; // Adsgram panelinden aldığın onaylı gerçek blok ID
+        const ADSGRAM_BLOCK_ID = "46174"; // Adsgram Onaylı Blok ID
         let adController = null;
 
         if (window.Adsgram) {
@@ -142,19 +141,12 @@
 
         function watchAdForExtraBalls() {
             if (!adController) {
-                alert("Adsgram SDK yüklenemedi. Test modu simüle ediliyor.");
                 grantExtraBallsReward();
                 return;
             }
-
             adController.show()
-                .then((result) => {
-                    // Kullanıcı reklamı başarıyla izlediğinde ödülü ver
-                    grantExtraBallsReward();
-                })
-                .catch((err) => {
-                    console.warn("Reklam izlenmedi veya kapatıldı:", err);
-                });
+                .then(() => { grantExtraBallsReward(); })
+                .catch((err) => { console.warn("Reklam kapatıldı:", err); });
         }
 
         function grantExtraBallsReward() {
@@ -162,18 +154,15 @@
             document.getElementById('balls-text').innerText = ballCount;
             document.getElementById('game-over-screen').style.display = 'none';
             gameState = 'AIMING';
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.notificationOccurred('success');
-            }
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         }
 
-        // --- OYUN MOTORU VE DEĞİŞKENLERİ ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
         function resizeCanvas() {
             canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight - 45; // HUD yüksekliği çıkarılıyor
+            canvas.height = window.innerHeight - 45;
             groundY = canvas.height - 30;
             returnX = canvas.width / 2;
         }
@@ -190,32 +179,23 @@
         let isAiming = false;
         let returnX = 0;
         let groundY = 0;
-
         const COLS = 7;
 
         class Ball {
             constructor(x, y, vx, vy) {
-                this.x = x;
-                this.y = y;
-                this.vx = vx;
-                this.vy = vy;
-                this.radius = 6;
-                this.active = false;
+                this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+                this.radius = 6; this.active = false;
             }
             update() {
                 this.x += this.vx;
                 this.y += this.vy;
-
                 if (this.x - this.radius < 0) { this.x = this.radius; this.vx *= -1; }
                 if (this.x + this.radius > canvas.width) { this.x = canvas.width - this.radius; this.vx *= -1; }
                 if (this.y - this.radius < 0) { this.y = this.radius; this.vy *= -1; }
-
                 if (this.y > groundY) {
                     this.active = false;
-                    this.vx = 0;
-                    this.vy = 0;
-                    this.x = returnX;
-                    this.y = groundY;
+                    this.vx = 0; this.vy = 0;
+                    this.x = returnX; this.y = groundY;
                 }
             }
             draw() {
@@ -228,9 +208,7 @@
 
         class Brick {
             constructor(r, c, hp) {
-                this.r = r;
-                this.c = c;
-                this.hp = hp;
+                this.r = r; this.c = c; this.hp = hp;
                 this.w = (canvas.width / COLS) - 4;
                 this.h = 40;
                 this.x = c * (canvas.width / COLS) + 2;
@@ -252,9 +230,7 @@
             resizeCanvas();
             document.getElementById('start-screen').style.display = 'none';
             document.getElementById('game-over-screen').style.display = 'none';
-            score = 0;
-            round = 1;
-            ballCount = 1;
+            score = 0; round = 1; ballCount = 1;
             bricks = [];
             spawnRow();
             setupBalls();
@@ -265,22 +241,16 @@
             for (let b of bricks) {
                 b.r++;
                 b.y = b.r * 45 + 10;
-                if (b.y >= groundY - 50 && b.hp > 0) {
-                    gameOver();
-                }
+                if (b.y >= groundY - 50 && b.hp > 0) gameOver();
             }
             for (let c = 0; c < COLS; c++) {
-                if (Math.random() > 0.3) {
-                    bricks.push(new Brick(0, c, round * 2));
-                }
+                if (Math.random() > 0.3) bricks.push(new Brick(0, c, round * 2));
             }
         }
 
         function setupBalls() {
             balls = [];
-            for (let i = 0; i < ballCount; i++) {
-                balls.push(new Ball(returnX, groundY, 0, 0));
-            }
+            for (let i = 0; i < ballCount; i++) balls.push(new Ball(returnX, groundY, 0, 0));
         }
 
         function gameOver() {
@@ -289,7 +259,6 @@
             document.getElementById('game-over-screen').style.display = 'flex';
         }
 
-        // --- KONTROLLER ---
         canvas.addEventListener('pointerdown', (e) => {
             if (gameState !== 'AIMING') return;
             isAiming = true;
@@ -303,34 +272,26 @@
             aimEnd = { x: e.clientX - rect.left, y: e.clientY - rect.top };
         });
 
-        canvas.addEventListener('pointerup', (e) => {
+        canvas.addEventListener('pointerup', () => {
             if (!isAiming) return;
             isAiming = false;
-
             let dx = aimStart.x - aimEnd.x;
             let dy = aimStart.y - aimEnd.y;
             let angle = Math.atan2(dy, dx);
-
             if (angle > -0.1) angle = -0.1;
             if (angle < -Math.PI + 0.1) angle = -Math.PI + 0.1;
-
             let speed = 9;
             let vx = Math.cos(angle) * speed;
             let vy = Math.sin(angle) * speed;
-
             gameState = 'PLAYING';
             balls.forEach((ball, index) => {
                 setTimeout(() => {
-                    ball.x = returnX;
-                    ball.y = groundY;
-                    ball.vx = vx;
-                    ball.vy = vy;
-                    ball.active = true;
+                    ball.x = returnX; ball.y = groundY;
+                    ball.vx = vx; ball.vy = vy; ball.active = true;
                 }, index * 80);
             });
         });
 
-        // --- OYUN DÖNGÜSÜ ---
         function update() {
             if (gameState === 'PLAYING') {
                 let activeCount = 0;
@@ -338,43 +299,30 @@
                     if (ball.active) {
                         ball.update();
                         activeCount++;
-
                         for (let brick of bricks) {
                             if (brick.hp > 0) {
                                 if (ball.x > brick.x && ball.x < brick.x + brick.w &&
                                     ball.y > brick.y && ball.y < brick.y + brick.h) {
-                                    brick.hp--;
-                                    score += 10;
-                                    ball.vy *= -1;
+                                    brick.hp--; score += 10; ball.vy *= -1;
                                 }
                             }
                         }
                     }
                 }
-
                 if (activeCount === 0) {
                     round++;
                     document.getElementById('round-text').innerText = round;
                     document.getElementById('balls-text').innerText = ballCount;
                     spawnRow();
-                    if (gameState !== 'GAMEOVER') {
-                        gameState = 'AIMING';
-                    }
+                    if (gameState !== 'GAMEOVER') gameState = 'AIMING';
                 }
             }
         }
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            for (let brick of bricks) {
-                brick.draw();
-            }
-
-            for (let ball of balls) {
-                ball.draw();
-            }
-
+            for (let brick of bricks) brick.draw();
+            for (let ball of balls) ball.draw();
             if (isAiming) {
                 ctx.strokeStyle = '#00ffff';
                 ctx.lineWidth = 2;
