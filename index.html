@@ -16,27 +16,37 @@
             user-select: none;
             -webkit-user-select: none;
         }
-        body {
+        body, html {
+            width: 100%;
+            height: 100vh;
             background-color: #0d0f18;
             color: #00ffff;
             font-family: 'Courier New', Courier, monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
             overflow: hidden;
+            position: fixed;
         }
         #game-container {
-            position: relative;
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-width: 450px;
             height: 100%;
-            max-height: 800px;
             background: #121526;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
             display: flex;
             flex-direction: column;
+        }
+        #hud {
+            width: 100%;
+            height: 45px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            background: #161a2e;
+            border-bottom: 1px solid #222b45;
+            font-size: 14px;
+            font-weight: bold;
+            flex-shrink: 0;
         }
         canvas {
             display: block;
@@ -50,7 +60,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(13, 15, 24, 0.85);
+            background: rgba(13, 15, 24, 0.9);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -60,13 +70,13 @@
             padding: 20px;
         }
         h1 {
-            font-size: 28px;
+            font-size: 26px;
             margin-bottom: 10px;
             color: #00ffff;
             text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
         }
         p {
-            font-size: 14px;
+            font-size: 13px;
             margin-bottom: 20px;
             color: #a0aabf;
         }
@@ -81,24 +91,11 @@
             cursor: pointer;
             box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
             margin: 10px;
-            transition: transform 0.1s ease;
-        }
-        .btn:active {
-            transform: scale(0.95);
         }
         .btn-ad {
             background: linear-gradient(135deg, #ff00ff, #8800ff);
             color: #ffffff;
             box-shadow: 0 0 15px rgba(255, 0, 255, 0.4);
-        }
-        #hud {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 15px;
-            background: #161a2e;
-            border-bottom: 1px solid #222b45;
-            font-size: 14px;
-            font-weight: bold;
         }
     </style>
 </head>
@@ -136,28 +133,25 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        const ADSGRAM_BLOCK_ID = "43573"; // Panelden aldığın onaylı blok ID
+        const ADSGRAM_BLOCK_ID = "43573"; // Onaylı blok ID
         let adController = null;
 
-        // Adsgram Başlatma
         if (window.Adsgram) {
             adController = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
         }
 
         function watchAdForExtraBalls() {
             if (!adController) {
-                alert("Reklam yüklenemedi, test modu simüle ediliyor.");
                 grantExtraBallsReward();
                 return;
             }
 
             adController.show()
                 .then((result) => {
-                    // Kullanıcı reklamı başarıyla izledi
                     grantExtraBallsReward();
                 })
                 .catch((err) => {
-                    console.warn("Reklam izlenmedi veya kapatıldı:", err);
+                    console.warn("Reklam izlenmedi:", err);
                 });
         }
 
@@ -165,6 +159,7 @@
             ballCount += 5;
             document.getElementById('balls-text').innerText = ballCount;
             document.getElementById('game-over-screen').style.display = 'none';
+            gameState = 'AIMING';
             if (tg.HapticFeedback) {
                 tg.HapticFeedback.notificationOccurred('success');
             }
@@ -174,31 +169,27 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Canvas boyutlarını otomatik ayarla
         function resizeCanvas() {
-            const container = document.getElementById('game-container');
-            canvas.width = container.clientWidth;
-            canvas.height = container.clientHeight - 40; // HUD payı
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight - 45; // HUD yüksekliği çıkarılıyor
+            groundY = canvas.height - 30;
+            returnX = canvas.width / 2;
         }
         window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
 
-        let gameState = 'START'; // START, AIMING, PLAYING, GAMEOVER
+        let gameState = 'START';
         let score = 0;
         let round = 1;
         let ballCount = 1;
         let balls = [];
         let bricks = [];
-        let particles = [];
         let aimStart = { x: 0, y: 0 };
         let aimEnd = { x: 0, y: 0 };
         let isAiming = false;
-        let returnX = canvas.width / 2;
-        let groundY = canvas.height - 30;
+        let returnX = 0;
+        let groundY = 0;
 
         const COLS = 7;
-        const ROWS = 8;
-        const BRICK_SIZE = canvas.width / COls;
 
         class Ball {
             constructor(x, y, vx, vy) {
@@ -213,12 +204,10 @@
                 this.x += this.vx;
                 this.y += this.vy;
 
-                // Duvar çarpmaları
                 if (this.x - this.radius < 0) { this.x = this.radius; this.vx *= -1; }
                 if (this.x + this.radius > canvas.width) { this.x = canvas.width - this.radius; this.vx *= -1; }
-                if (this.y - this.radius < 40) { this.y = 40 + this.radius; this.vy *= -1; }
+                if (this.y - this.radius < 0) { this.y = this.radius; this.vy *= -1; }
 
-                // Zere, yere düşme kontrolü
                 if (this.y > groundY) {
                     this.active = false;
                     this.vx = 0;
@@ -240,10 +229,10 @@
                 this.r = r;
                 this.c = c;
                 this.hp = hp;
-                this.w = canvas.width / COLS - 4;
+                this.w = (canvas.width / COLS) - 4;
                 this.h = 40;
                 this.x = c * (canvas.width / COLS) + 2;
-                this.y = r * 45 + 50;
+                this.y = r * 45 + 10;
             }
             draw() {
                 if (this.hp <= 0) return;
@@ -258,13 +247,12 @@
         }
 
         function startGame() {
+            resizeCanvas();
             document.getElementById('start-screen').style.display = 'none';
             document.getElementById('game-over-screen').style.display = 'none';
             score = 0;
             round = 1;
             ballCount = 1;
-            returnX = canvas.width / 2;
-            groundY = canvas.height - 30;
             bricks = [];
             spawnRow();
             setupBalls();
@@ -272,15 +260,13 @@
         }
 
         function spawnRow() {
-            // Mevcut tuğlaları aşağı kaydır
             for (let b of bricks) {
                 b.r++;
-                b.y = b.r * 45 + 50;
-                if (b.y >= groundY - 40 && b.hp > 0) {
+                b.y = b.r * 45 + 10;
+                if (b.y >= groundY - 50 && b.hp > 0) {
                     gameOver();
                 }
             }
-            // Yeni satır ekle
             for (let c = 0; c < COLS; c++) {
                 if (Math.random() > 0.3) {
                     bricks.push(new Brick(0, c, round * 2));
@@ -301,7 +287,7 @@
             document.getElementById('game-over-screen').style.display = 'flex';
         }
 
-        // --- DOKUNMA VE FARE KONTROLLERİ ---
+        // --- KONTROLLER ---
         canvas.addEventListener('pointerdown', (e) => {
             if (gameState !== 'AIMING') return;
             isAiming = true;
@@ -323,16 +309,14 @@
             let dy = aimStart.y - aimEnd.y;
             let angle = Math.atan2(dy, dx);
 
-            // Açıyı sınırla (yukarı doğru atış için)
             if (angle > -0.1) angle = -0.1;
             if (angle < -Math.PI + 0.1) angle = -Math.PI + 0.1;
 
-            let speed = 8;
+            let speed = 9;
             let vx = Math.cos(angle) * speed;
             let vy = Math.sin(angle) * speed;
 
             gameState = 'PLAYING';
-            let delay = 0;
             balls.forEach((ball, index) => {
                 setTimeout(() => {
                     ball.x = returnX;
@@ -340,7 +324,7 @@
                     ball.vx = vx;
                     ball.vy = vy;
                     ball.active = true;
-                }, index * 100);
+                }, index * 80);
             });
         });
 
@@ -353,7 +337,6 @@
                         ball.update();
                         activeCount++;
 
-                        // Tuğla Çarpışma Kontrolü
                         for (let brick of bricks) {
                             if (brick.hp > 0) {
                                 if (ball.x > brick.x && ball.x < brick.x + brick.w &&
@@ -367,7 +350,6 @@
                     }
                 }
 
-                // Tüm toplar yere düştüyse turu bitir
                 if (activeCount === 0) {
                     round++;
                     document.getElementById('round-text').innerText = round;
@@ -383,17 +365,14 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Tuğlaları çiz
             for (let brick of bricks) {
                 brick.draw();
             }
 
-            // Topları çiz
             for (let ball of balls) {
                 ball.draw();
             }
 
-            // Nişan alma çizgisi
             if (isAiming) {
                 ctx.strokeStyle = '#00ffff';
                 ctx.lineWidth = 2;
@@ -414,6 +393,7 @@
             requestAnimationFrame(loop);
         }
 
+        resizeCanvas();
         loop();
     </script>
 </body>
